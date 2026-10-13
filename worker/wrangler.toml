@@ -1,0 +1,22 @@
+name = "meo-ngu-api"
+main = "src/index.js"
+compatibility_date = "2025-08-15"
+
+[vars]
+ALLOWED_ORIGINS = "https://hieunguyen1312.github.io,http://localhost:8080"
+AGENT_MODEL = "claude-sonnet-5-5"
+AGENT_DAILY_LIMIT = "30"
+# Secret (never commit): npx wrangler secret put ANTHROPIC_API_KEY
+
+[[d1_databases]]
+binding = "DB"
+database_name = "meo-ngu"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# Optional: raw audio that owners choose to share. Uncomment after creating the bucket.
+# [[r2_buckets]]
+# binding = "AUDIO"
+# bucket_name = "meo-ngu-audio"
+
+[observability]
+enabled = true

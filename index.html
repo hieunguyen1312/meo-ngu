@@ -4,129 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Mèo Ngữ</title>
+<meta name="description" content="Thu tiếng mèo, hiểu ý bé, học riêng từng con mèo và hỏi chuyên gia hành vi.">
+<meta name="theme-color" content="#111518">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
-<style>
-/* Layout: field-recorder bench — recorder on the left, translation readout on the right, analysis strip below. */
-:root{
-  --bg:#F1F4F2; --surface:#FFFFFF; --sunken:#E7ECE9; --ink:#1B2230; --muted:#5A6471; --line:#D7DEDA;
-  --ginger:#C8651A; --ginger-soft:#F6DCC4; --teal:#1C8580; --teal-soft:#CDE9E6; --rec:#D23B3B;
-  --f-display:"Bricolage Grotesque","Be Vietnam Pro",system-ui,sans-serif;
-  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
-  --r:14px;
-  color-scheme:light;
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#111518; --surface:#1A2025; --sunken:#151A1E; --ink:#E8EDEB; --muted:#9AA5AE; --line:#2B343A;
-  --ginger:#F0913F; --ginger-soft:#3A2A1C; --teal:#45B9B2; --teal-soft:#173331; --rec:#F05A5A; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#111518; --surface:#1A2025; --sunken:#151A1E; --ink:#E8EDEB; --muted:#9AA5AE; --line:#2B343A;
-  --ginger:#F0913F; --ginger-soft:#3A2A1C; --teal:#45B9B2; --teal-soft:#173331; --rec:#F05A5A; color-scheme:dark}
-
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);padding-inline:16px;padding-block:20px 40px;
-  padding-top:max(20px,env(safe-area-inset-top));padding-bottom:max(40px,env(safe-area-inset-bottom))}
-.wrap{max-width:1080px;margin:0 auto;display:grid;gap:20px}
-button,input{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
-
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:4px}
-.brand h1{font:800 clamp(34px,6vw,52px)/1 var(--f-display);margin:0;letter-spacing:-0.02em}
-.brand h1 span{color:var(--ginger)}
-.brand p{margin:6px 0 0;color:var(--muted)}
-.chiprow-head{font:500 12px/1 var(--f-mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
-
-.bench{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px}
-@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
-.panel{grid-template-columns:minmax(0,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:16px;min-width:0;align-content:start}
-.label{font:600 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-
-/* recorder */
-.rec-zone{display:grid;justify-items:center;gap:12px;padding:8px 0 4px}
-.rec-btn{position:relative;width:132px;height:132px;border-radius:50%;border:0;cursor:pointer;background:var(--ginger);color:#fff;
-  display:grid;place-items:center;transition:transform .15s ease, background .2s}
-.rec-btn:hover{transform:scale(1.03)}
-.rec-btn .ring{position:absolute;inset:-10px;border-radius:50%;border:3px solid var(--ginger);opacity:.35;transform:scale(1);transition:transform .08s linear}
-.rec-btn svg{width:46px;height:46px}
-.rec-btn.on{background:var(--rec)}
-.rec-btn.on .ring{border-color:var(--rec)}
-.rec-btn.busy{opacity:.6;cursor:progress}
-.rec-state{font:600 17px/1.3 var(--f-display);text-align:center}
-.rec-time{font:500 13px/1 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
-.live{width:100%;height:64px;display:block;background:var(--sunken);border-radius:10px}
-.mic-msg{background:var(--ginger-soft);border-radius:10px;padding:12px 14px;font-size:14px}
-.mic-msg b{display:block;margin-bottom:2px}
-
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 12px;cursor:pointer;font:500 14px/1 var(--f-mono)}
-.chip:hover{border-color:var(--ginger);color:var(--ginger)}
-.typer{display:flex;gap:8px}
-.typer input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font-family:var(--f-mono)}
-.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600;white-space:nowrap}
-.btn:hover{border-color:var(--ink)}
-.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.sep{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
-.sep::before,.sep::after{content:"";flex:1;height:1px;background:var(--line)}
-
-/* translation */
-.src{font:500 13px/1.4 var(--f-mono);color:var(--muted)}
-.intent{display:inline-flex;align-items:center;gap:8px;align-self:start;justify-self:start;background:var(--teal-soft);color:var(--teal);
-  border-radius:999px;padding:6px 12px;font-weight:600;font-size:14px}
-.intent i{width:8px;height:8px;border-radius:50%;background:currentColor;display:block}
-.quote{font:700 clamp(24px,3.4vw,34px)/1.25 var(--f-display);margin:0;text-wrap:balance;letter-spacing:-0.01em;min-height:2.5em}
-.quote::before{content:"“";color:var(--ginger)}
-.quote::after{content:"”";color:var(--ginger)}
-.seg{display:inline-grid;grid-auto-flow:column;background:var(--sunken);border-radius:10px;padding:3px;gap:3px;justify-self:start;max-width:100%}
-.seg button{border:0;background:transparent;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:500;font-size:14px}
-.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12);font-weight:600}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.meter{display:grid;gap:6px}
-.meter-top{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
-.meter-top b{font:600 13px/1 var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums}
-.bar{height:8px;background:var(--sunken);border-radius:99px;overflow:hidden}
-.bar span{display:block;height:100%;background:var(--ginger);border-radius:99px;transition:width .5s ease}
-.note{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin:0}
-
-/* analysis */
-.analysis{display:grid;gap:14px}
-.analysis-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
-.analysis h2,.history h2{font:700 20px/1.2 var(--f-display);margin:0}
-.legend{display:flex;gap:14px;font-size:13px;color:var(--muted);flex-wrap:wrap}
-.legend span{display:inline-flex;align-items:center;gap:6px}
-.legend i{width:10px;height:10px;border-radius:3px;display:block}
-.chart-box{overflow-x:auto}
-#chart{width:100%;height:220px;display:block;min-width:300px}
-.readouts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-@media (max-width:820px){.readouts{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.ro{background:var(--surface);padding:10px 12px;display:grid;gap:4px;min-width:0}
-.ro small{font-size:12px;color:var(--muted)}
-.ro b{font:600 17px/1.2 var(--f-mono);font-variant-numeric:tabular-nums}
-
-.history ol{list-style:none;margin:0;padding:0;display:grid}
-.history li{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:baseline}
-.history li:first-child{border-top:0}
-.history .h-src{font:500 13px/1.3 var(--f-mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.history .h-txt{min-width:0}
-.history .h-int{font-size:12px;color:var(--teal);font-weight:600;white-space:nowrap}
-@media (max-width:560px){.history li{grid-template-columns:minmax(0,1fr)}.history .h-int{justify-self:start}}
-.empty{color:var(--muted);font-size:14px;margin:0}
-footer{color:var(--muted);font-size:13px;max-width:70ch}
-@media (prefers-reduced-motion: reduce){*{transition:none!important}}
-</style>
+<link rel="stylesheet" href="assets/style.css?v=2">
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand">
       <h1>Mèo<span>.</span>Ngữ</h1>
-      <p>Thu tiếng mèo, đọc ra tiếng người.</p>
+      <p>Thu tiếng mèo, hiểu ý bé, học riêng từng con.</p>
     </div>
-    <span class="chiprow-head">Phiên bản 1.1 · chạy hoàn toàn trên máy</span>
+    <div class="topbar">
+      <div class="catpick">
+        <label for="catSel">Mèo</label>
+        <select id="catSel" aria-label="Chọn mèo"></select>
+        <button class="btn sm" id="addCat" type="button">+ Thêm mèo</button>
+      </div>
+      <span class="sync" id="sync" data-s="off"><i></i><span>Chỉ lưu trên máy</span></span>
+    </div>
   </header>
 
   <section class="bench">
@@ -143,7 +42,11 @@ footer{color:var(--muted);font-size:13px;max-width:70ch}
       </div>
       <canvas class="live" id="live" aria-hidden="true"></canvas>
       <div class="mic-msg" id="micMsg" hidden></div>
-
+      <div class="upload">
+        <label class="btn sm" for="fileIn">Tải file âm thanh/video</label>
+        <input id="fileIn" type="file" accept="audio/*,video/*" hidden>
+        <span>Phân tích tối đa 30 giây đầu.</span>
+      </div>
       <div class="sep">hoặc thử nhanh</div>
       <div class="chips" id="chips"></div>
       <form class="typer" id="typer">
@@ -157,7 +60,8 @@ footer{color:var(--muted);font-size:13px;max-width:70ch}
       <div class="src" id="src">—</div>
       <div class="intent" id="intent"><i></i><span>—</span></div>
       <p class="quote" id="quote">…</p>
-      <div class="seg" role="group" aria-label="Tính cách mèo" id="persona">
+      <div class="model-src" id="modelSrc"></div>
+      <div class="seg" role="group" aria-label="Giọng dịch" id="persona">
         <button type="button" data-p="nung" aria-pressed="true">Mèo nũng</button>
         <button type="button" data-p="hoang" aria-pressed="false">Hoàng thượng</button>
         <button type="button" data-p="dao" aria-pressed="false">Giang hồ</button>
@@ -165,494 +69,142 @@ footer{color:var(--muted);font-size:13px;max-width:70ch}
       <div class="actions">
         <button class="btn" id="again" type="button">Dịch câu khác</button>
         <button class="btn" id="replay" type="button">Nghe lại</button>
+        <button class="btn" id="askThis" type="button">Hỏi chuyên gia về tiếng này</button>
       </div>
       <div class="meter">
-        <div class="meter-top"><span>Độ tự tin của máy dịch</span><b id="confTxt">—</b></div>
+        <div class="meter-top"><span>Độ tự tin</span><b id="confTxt">—</b></div>
         <div class="bar"><span id="confBar" style="width:0"></span></div>
+      </div>
+
+      <div class="labeler" id="labeler" hidden>
+        <h3>Dạy app hiểu <span class="catname"></span></h3>
+        <p>Lúc bé kêu, chuyện gì đang diễn ra?</p>
+        <div class="chips" id="ctxChips"></div>
+        <p>Bạn đáp lại xong, bé thế nào?</p>
+        <div class="chips" id="outChips"></div>
+        <div class="actions">
+          <button class="btn primary" id="saveLbl" type="button" disabled>Lưu vào bộ nhớ của bé</button>
+          <span class="saved-note" id="savedNote" hidden>Đã lưu. Bé càng nhiều mẫu, app dịch càng sát.</span>
+        </div>
       </div>
       <p class="note" id="note"></p>
     </div>
   </section>
 
-  <section class="panel analysis" aria-labelledby="an-title">
-    <div class="analysis-head">
-      <h2 id="an-title">Phân tích âm thanh</h2>
-      <div class="legend">
-        <span><i style="background:var(--ginger)"></i>Độ lớn</span>
-        <span><i style="background:var(--teal)"></i>Cao độ (Hz)</span>
-        <span><i style="background:var(--sunken);border:1px solid var(--line)"></i>Tiếng kêu</span>
+  <section class="panel">
+    <div class="tabs" role="tablist" id="tabs">
+      <button role="tab" id="tab-analysis" aria-controls="p-analysis" aria-selected="true">Phân tích</button>
+      <button role="tab" id="tab-brain" aria-controls="p-brain" aria-selected="false">Bộ não của bé</button>
+      <button role="tab" id="tab-persona" aria-controls="p-persona" aria-selected="false">Tính cách</button>
+      <button role="tab" id="tab-chat" aria-controls="p-chat" aria-selected="false">Hỏi chuyên gia</button>
+      <button role="tab" id="tab-log" aria-controls="p-log" aria-selected="false">Nhật ký</button>
+      <button role="tab" id="tab-settings" aria-controls="p-settings" aria-selected="false">Cài đặt</button>
+    </div>
+
+    <div class="tabpanel analysis" role="tabpanel" id="p-analysis" aria-labelledby="tab-analysis">
+      <div class="analysis-head">
+        <h2>Phân tích âm thanh</h2>
+        <div class="legend">
+          <span><i style="background:var(--ginger)"></i>Độ lớn</span>
+          <span><i style="background:var(--teal)"></i>Cao độ (Hz)</span>
+          <span><i style="background:var(--sunken);border:1px solid var(--line)"></i>Tiếng kêu</span>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="chart"></canvas></div>
+      <div class="readouts">
+        <div class="ro"><small>Thời lượng kêu</small><b id="r-dur">—</b></div>
+        <div class="ro"><small>Số tiếng</small><b id="r-syl">—</b></div>
+        <div class="ro"><small>Cao độ trung vị</small><b id="r-pitch">—</b></div>
+        <div class="ro"><small>Xu hướng giọng</small><b id="r-trend">—</b></div>
+        <div class="ro"><small>Âm có cao độ</small><b id="r-voiced">—</b></div>
+        <div class="ro"><small>Độ rè</small><b id="r-noise">—</b></div>
       </div>
     </div>
-    <div class="chart-box"><canvas id="chart"></canvas></div>
-    <div class="readouts">
-      <div class="ro"><small>Thời lượng kêu</small><b id="r-dur">—</b></div>
-      <div class="ro"><small>Số tiếng</small><b id="r-syl">—</b></div>
-      <div class="ro"><small>Cao độ trung vị</small><b id="r-pitch">—</b></div>
-      <div class="ro"><small>Xu hướng giọng</small><b id="r-trend">—</b></div>
-      <div class="ro"><small>Âm có cao độ</small><b id="r-voiced">—</b></div>
-      <div class="ro"><small>Độ rè</small><b id="r-noise">—</b></div>
+
+    <div class="tabpanel" role="tabpanel" id="p-brain" aria-labelledby="tab-brain" hidden>
+      <h2 class="h2">Bộ não của <span class="catname"></span></h2>
+      <div class="brain-grid">
+        <div class="ro"><small>Mẫu đã gắn nhãn</small><b id="b-n">0</b></div>
+        <div class="ro"><small>Số loại ngữ cảnh đã học</small><b id="b-k">0</b></div>
+        <div class="ro"><small>Độ chính xác ước tính</small><b id="b-acc">—</b></div>
+      </div>
+      <div class="hint" id="b-hint"></div>
+      <div class="lblrows" id="b-rows"></div>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="p-persona" aria-labelledby="tab-persona" hidden>
+      <h2 class="h2">Tính cách của <span class="catname"></span></h2>
+      <p class="empty">Dựa trên mô hình Feline Five (Litchfield và cộng sự, 2017; khảo sát 2.802 con mèo). Đây là bản rút gọn 10 câu để tham khảo, chưa phải bảng đánh giá đầy đủ. Chấm từ 1 (hoàn toàn không đúng) đến 7 (rất đúng).</p>
+      <div class="traits" id="traits"></div>
+      <div class="quiz" id="quiz"></div>
+      <div class="actions"><button class="btn primary" id="saveQuiz" type="button" disabled>Lưu kết quả</button><span class="saved-note" id="quizNote" hidden>Đã lưu.</span></div>
+    </div>
+
+    <div class="tabpanel chat" role="tabpanel" id="p-chat" aria-labelledby="tab-chat" hidden>
+      <h2 class="h2">Hỏi chuyên gia hành vi về <span class="catname"></span></h2>
+      <div class="mic-msg" id="chatOff" hidden></div>
+      <div class="chatlog" id="chatlog"></div>
+      <div class="suggest" id="suggest"></div>
+      <form class="chatform" id="chatform">
+        <textarea id="chatIn" rows="2" placeholder="Ví dụ: Sao bé hay kêu lúc 5 giờ sáng?" aria-label="Câu hỏi cho chuyên gia"></textarea>
+        <button class="btn primary" type="submit" id="chatSend">Gửi</button>
+      </form>
+      <p class="empty" id="chatQuota"></p>
+    </div>
+
+    <div class="tabpanel history" role="tabpanel" id="p-log" aria-labelledby="tab-log" hidden>
+      <h2>Nhật ký của <span class="catname"></span></h2>
+      <p class="empty" id="hEmpty">Chưa có lần thu nào.</p>
+      <ol id="hList"></ol>
+    </div>
+
+    <div class="tabpanel settings" role="tabpanel" id="p-settings" aria-labelledby="tab-settings" hidden>
+      <section>
+        <h3>Hồ sơ mèo</h3>
+        <div class="actions"><button class="btn" id="editCat" type="button">Sửa thông tin bé</button><button class="btn danger" id="delCat" type="button">Xoá bé và dữ liệu của bé</button></div>
+      </section>
+      <section>
+        <h3>Mã thiết bị</h3>
+        <p>Dữ liệu trên máy chủ gắn với mã này, không cần tài khoản. Lưu mã lại để mở dữ liệu trên máy khác. Ai có mã này sẽ xem được dữ liệu mèo của bạn.</p>
+        <div class="token" id="tokenTxt">—</div>
+        <div class="actions"><button class="btn" id="copyToken" type="button">Sao chép mã</button><button class="btn" id="useToken" type="button">Dùng mã từ máy khác</button></div>
+      </section>
+      <section>
+        <h3>Chia sẻ bản ghi âm</h3>
+        <label class="check"><input type="checkbox" id="shareAudio"> <span>Cho phép gửi bản ghi âm gốc lên máy chủ để cải thiện mô hình chung. Mặc định app chỉ gửi các con số đo được (cao độ, độ dài…), không gửi âm thanh. Bản ghi có thể lẫn giọng người trong nhà.</span></label>
+      </section>
+      <section>
+        <h3>Dữ liệu của bạn</h3>
+        <div class="actions"><button class="btn" id="exportBtn" type="button">Xem dữ liệu dạng JSON</button><button class="btn danger" id="wipeBtn" type="button">Xoá toàn bộ dữ liệu</button></div>
+        <pre class="token" id="exportOut" hidden></pre>
+      </section>
     </div>
   </section>
 
-  <section class="panel history" aria-labelledby="hi-title">
-    <h2 id="hi-title">Nhật ký phiên dịch</h2>
-    <p class="empty" id="hEmpty">Chưa có lần thu nào. Bản dịch của bạn sẽ được lưu ở đây trên trình duyệt này.</p>
-    <ol id="hList"></ol>
-  </section>
-
-  <footer>Mèo Ngữ đoán ý dựa trên các đặc điểm âm thanh mà nghiên cứu hành vi mèo hay nhắc tới: độ dài tiếng kêu, cao độ, hướng lên xuống của giọng và độ rè. Đây là ứng dụng giải trí, không phải công cụ chẩn đoán. Nếu mèo kêu bất thường kéo dài, hãy đưa bé đi thú y.</footer>
+  <footer>Mèo Ngữ học riêng từng con mèo từ những lần bạn gắn nhãn. Kết quả dịch và lời khuyên chỉ để tham khảo, không thay thế bác sĩ thú y. Nếu bé kêu bất thường kéo dài, bỏ ăn, hoặc rặn tiểu không ra, hãy đưa bé đi khám ngay.</footer>
 </div>
 
-<script>
-// ===== Mèo Ngữ core: synth + analyzer + translator =====
-const SR = 22050;
-function makeRng(seed){let s=(seed>>>0)||1;return()=>{s^=s<<13;s>>>=0;s^=s>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+<div class="dialog-bg" id="dlg" hidden>
+  <form class="dialog" id="dlgForm">
+    <h3 id="dlgTitle">Thêm mèo</h3>
+    <div class="field"><label for="f-name">Tên bé</label><input id="f-name" maxlength="40" required placeholder="Mướp"></div>
+    <div class="row2">
+      <div class="field"><label for="f-sex">Giới tính</label><select id="f-sex"><option value="">Chưa rõ</option><option value="duc">Đực</option><option value="cai">Cái</option></select></div>
+      <div class="field"><label for="f-neu">Triệt sản</label><select id="f-neu"><option value="">Chưa rõ</option><option value="1">Rồi</option><option value="0">Chưa</option></select></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="f-year">Năm sinh</label><input id="f-year" inputmode="numeric" maxlength="4" placeholder="2022"></div>
+      <div class="field"><label for="f-breed">Giống</label><input id="f-breed" maxlength="60" placeholder="Mèo ta"></div>
+    </div>
+    <div class="field"><label for="f-notes">Ghi chú (thói quen, sức khoẻ, nhà có mấy mèo…)</label><textarea id="f-notes" rows="3" maxlength="1000"></textarea></div>
+    <div class="field" id="f-tokenWrap" hidden><label for="f-token">Mã thiết bị</label><input id="f-token" autocomplete="off"></div>
+    <p class="empty" id="dlgErr" hidden></p>
+    <div class="actions"><button class="btn primary" type="submit" id="dlgOk">Lưu</button><button class="btn" type="button" id="dlgCancel">Huỷ</button></div>
+  </form>
+</div>
 
-function synthMeow(out,start,dur,f0s,f0p,f0e,amp,rng){
-  const n=Math.floor(dur*SR);let ph=0;
-  for(let i=0;i<n&&start+i<out.length;i++){
-    const t=i/n;
-    const f=(1-t)*(1-t)*f0s+2*(1-t)*t*f0p+t*t*f0e;
-    const vib=1+0.012*Math.sin(2*Math.PI*6*i/SR);
-    ph+=2*Math.PI*f*vib/SR;
-    const fc=t<0.15?400+(t/0.15)*700:1100-(t-0.15)/0.85*400;
-    let s=0;
-    for(let h=1;h<=8;h++){const fh=f*h;if(fh>SR/2)break;const w=(1/h)*(0.35+Math.exp(-Math.pow((fh-fc)/450,2)));s+=w*Math.sin(h*ph);}
-    const env=Math.min(1,i/(0.04*SR))*Math.min(1,(n-i)/(0.08*SR));
-    out[start+i]+=amp*env*(s*0.45+0.01*(rng()*2-1));
-  }
-  return n;
-}
-function synthPurr(out,start,dur,amp,rng){
-  const n=Math.floor(dur*SR);let lp=0;
-  for(let i=0;i<n&&start+i<out.length;i++){
-    lp+=0.06*((rng()*2-1)-lp);
-    const am=Math.pow(0.5+0.5*Math.sin(2*Math.PI*26*i/SR),3);
-    const br=0.65+0.35*Math.sin(Math.PI*i/n);
-    const env=Math.min(1,i/(0.06*SR))*Math.min(1,(n-i)/(0.1*SR));
-    out[start+i]+=amp*env*br*am*lp*4;
-  }
-  return n;
-}
-function synthHiss(out,start,dur,amp,rng){
-  const n=Math.floor(dur*SR);let prev=0;
-  for(let i=0;i<n&&start+i<out.length;i++){
-    const x=rng()*2-1;const y=x-prev;prev=x;
-    const env=Math.min(1,i/(0.03*SR))*Math.pow(1-i/n,0.6);
-    out[start+i]+=amp*env*y*0.45;
-  }
-  return n;
-}
-function synthGrowl(out,start,dur,amp,rng){
-  const n=Math.floor(dur*SR);let ph=0;
-  for(let i=0;i<n&&start+i<out.length;i++){
-    const f=105*(1+0.03*Math.sin(2*Math.PI*3*i/SR));ph+=2*Math.PI*f/SR;
-    let s=0;for(let h=1;h<=10;h++)s+=Math.sin(h*ph)/Math.sqrt(h);
-    const am=0.6+0.4*Math.sin(2*Math.PI*28*i/SR);
-    const env=Math.min(1,i/(0.08*SR))*Math.min(1,(n-i)/(0.1*SR));
-    out[start+i]+=amp*env*am*(s*0.18+0.03*(rng()*2-1));
-  }
-  return n;
-}
-
-function deaccent(s){return s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D');}
-
-// Text -> list of sound events
-function parseMeoText(text){
-  const raw=(text||'').trim();
-  const tokens=raw.split(/[\s,;]+/).filter(Boolean);
-  const ev=[];
-  for(const tok of tokens){
-    const d=deaccent(tok).toLowerCase();
-    const loud=tok.length>2&&tok===tok.toUpperCase()&&/[A-ZÀ-Ỹ]/.test(tok);
-    const q=/\?/.test(tok),ex=/!/.test(tok),dots=/(\.\.\.|…)/.test(tok);
-    const w=d.replace(/[^a-z]/g,'');
-    if(!w)continue;
-    if(/^(kh|h)e+|^hi+s+|^phi+/.test(w)){ev.push({k:'hiss',dur:0.6+0.12*Math.min(6,(w.match(/e|s/g)||[]).length)});continue;}
-    if(/^gr*u+r*$|^gr+$|^grr+r*$|^gru+/.test(w)){ev.push({k:'growl',dur:0.8+0.1*Math.min(6,(w.match(/u|r/g)||[]).length)});continue;}
-    if(/^(m|b)?r+[ru]*p+$|^prr+/.test(w)){ev.push({k:'chirp'});continue;}
-    if(/^r+u*r*$|^ru+|^pur+/.test(w)){ev.push({k:'purr',dur:0.9});continue;}
-    if(/me+o+w*|meow|mi+a+o+|mao|nya+|ngao/.test(w)){
-      const os=(w.match(/o+w*$|a+o*$/)||[''])[0].length;
-      const extra=Math.max(0,os-1);
-      ev.push({k:'meow',dur:Math.min(2.2,0.32+0.16*extra),q,ex:ex||loud,dots});continue;
-    }
-  }
-  return ev;
-}
-
-function synthFromText(text,seed){
-  const ev=parseMeoText(text);
-  const rng=makeRng(seed||12345);
-  let total=0.1;
-  for(const e of ev){total+=(e.k==='chirp'?0.13:e.dur)+0.18;}
-  const out=new Float32Array(Math.ceil((total+0.1)*SR));
-  let pos=Math.floor(0.08*SR);
-  for(const e of ev){
-    let n=0;
-    if(e.k==='meow'){
-      let fs=600,fp=720,fe=650,amp=0.8;
-      if(e.dur>=0.6){fs=560;fp=830;fe=640;}
-      if(e.q){fs=520;fp=700;fe=980;}
-      if(e.ex){fs=700;fp=980;fe=820;amp=1;}
-      if(e.dots){fs=470;fp=430;fe=320;amp=0.7;}
-      fs*=1+(rng()-0.5)*0.06;fp*=1+(rng()-0.5)*0.06;fe*=1+(rng()-0.5)*0.06;
-      n=synthMeow(out,pos,e.dur,fs,fp,fe,amp,rng);
-    }else if(e.k==='chirp'){n=synthMeow(out,pos,0.13,450,950,1020,0.8,rng);}
-    else if(e.k==='purr'){n=synthPurr(out,pos,e.dur,0.9,rng);pos+=n;continue;}
-    else if(e.k==='hiss'){n=synthHiss(out,pos,e.dur,0.9,rng);}
-    else if(e.k==='growl'){n=synthGrowl(out,pos,e.dur,0.9,rng);}
-    pos+=n+Math.floor((e.k==='chirp'?0.12:0.18)*SR);
-  }
-  let pk=0;for(let i=0;i<out.length;i++)pk=Math.max(pk,Math.abs(out[i]));
-  if(pk>0)for(let i=0;i<out.length;i++)out[i]*=0.85/pk;
-  return {samples:out,sampleRate:SR,events:ev};
-}
-
-// ---------- Analyzer ----------
-function toAnalysisRate(samples,sr){
-  const factor=Math.max(1,Math.round(sr/11025));
-  const n=Math.floor(samples.length/factor);
-  const y=new Float32Array(n);
-  for(let i=0;i<n;i++){let s=0;for(let j=0;j<factor;j++)s+=samples[i*factor+j];y[i]=s/factor;}
-  // remove DC
-  let m=0;for(let i=0;i<n;i++)m+=y[i];m/=n||1;for(let i=0;i<n;i++)y[i]-=m;
-  return {x:y,sr:sr/factor};
-}
-function median(a){if(!a.length)return 0;const b=[...a].sort((p,q)=>p-q);const h=b.length>>1;return b.length%2?b[h]:(b[h-1]+b[h])/2;}
-
-function analyze(samples,srIn){
-  const {x,sr}=toAnalysisRate(samples,srIn);
-  const N=Math.round(0.04*sr),hop=Math.round(0.01*sr);
-  const frames=[];
-  let peak=0;
-  for(let s=0;s+N<=x.length;s+=hop){
-    let e=0,z=0;
-    for(let i=0;i<N;i++){e+=x[s+i]*x[s+i];if(i&&((x[s+i]>=0)!==(x[s+i-1]>=0)))z++;}
-    const rms=Math.sqrt(e/N);peak=Math.max(peak,rms);
-    frames.push({t:s/sr,rms,zcr:z/N,f0:0,clar:0,active:false});
-  }
-  // noise floor: 20th percentile
-  const sorted=frames.map(f=>f.rms).sort((a,b)=>a-b);
-  const floor=sorted[Math.floor(sorted.length*0.2)]||0;
-  const thr=Math.max(0.008,floor*2.5,peak*0.12);
-  for(const f of frames)f.active=f.rms>thr;
-  // pitch on active frames
-  const minL=Math.floor(sr/1600),maxL=Math.ceil(sr/70);
-  const r=new Float32Array(maxL+2);
-  for(const f of frames){
-    if(!f.active)continue;
-    const s=Math.round(f.t*sr);
-    for(let L=minL;L<=maxL;L++){
-      let a=0,b=0,c=0;const M=N-L;
-      for(let i=0;i<M;i++){const u=x[s+i],v=x[s+i+L];a+=u*v;b+=u*u;c+=v*v;}
-      r[L]=a/(Math.sqrt(b*c)+1e-12);
-    }
-    let L0=-1;for(let L=minL;L<=maxL;L++){if(r[L]<0){L0=L;break;}}
-    if(L0<0)continue;
-    let gmax=0;const peaks=[];
-    for(let L=L0+1;L<maxL;L++){if(r[L]>r[L-1]&&r[L]>=r[L+1]){peaks.push(L);gmax=Math.max(gmax,r[L]);}}
-    if(!peaks.length)continue;
-    const pL=peaks.find(L=>r[L]>=0.9*gmax);
-    const a=r[pL-1],b=r[pL],c=r[pL+1];const den=a-2*b+c;
-    const off=den?0.5*(a-c)/den:0;
-    f.clar=b;if(b>0.55)f.f0=sr/(pL+off);
-  }
-  // segments (merge gaps <80ms, drop <50ms)
-  const segs=[];let cur=null,gap=0;
-  frames.forEach((f,i)=>{
-    if(f.active){if(cur&&gap*0.01<0.08){cur.end=i;}else{cur={start:i,end:i};segs.push(cur);}gap=0;}
-    else if(cur){gap++;}
-  });
-  const S=segs.map(g=>({start:g.start,end:g.end,dur:(g.end-g.start+1)*0.01})).filter(g=>g.dur>=0.05);
-  const actFrames=frames.filter(f=>f.active);
-  const voiced=actFrames.filter(f=>f.f0>0);
-  const activeDur=S.reduce((a,g)=>a+g.dur,0);
-  const voicedRatio=actFrames.length?voiced.length/actFrames.length:0;
-  const zcr=actFrames.length?median(actFrames.map(f=>f.zcr)):0;
-  const pitch=median(voiced.map(f=>f.f0));
-  let longest=S.reduce((a,g)=>(!a||g.dur>a.dur)?g:a,null);
-  let trend='ngang';
-  if(longest){
-    const fs=frames.slice(longest.start,longest.end+1).filter(f=>f.f0>0).map(f=>f.f0);
-    if(fs.length>=6){
-      const k=Math.floor(fs.length/3);
-      const a=median(fs.slice(0,k)),m=median(fs.slice(k,2*k)),c=median(fs.slice(2*k));
-      if(c>a*1.12)trend='len';else if(c<a*0.88)trend='xuong';else if(m>Math.max(a,c)*1.1)trend='vom';
-    }
-  }
-  const syl=S.length;
-  const meanSeg=syl?activeDur/syl:0;
-  return {frames,segs:S,activeDur,voicedRatio,zcr,pitch,trend,syl,meanSeg,longest:longest?longest.dur:0,
-    totalDur:x.length/sr,thr};
-}
-
-function classify(F){
-  if(F.activeDur<0.08)return {intent:'im',conf:0};
-  const clamp=v=>Math.max(52,Math.min(94,Math.round(v)));
-  if(F.zcr>0.18&&F.voicedRatio<0.45)return {intent:'khe',conf:clamp(60+(F.zcr-0.18)*120+(0.45-F.voicedRatio)*40)};
-  if(F.voicedRatio<0.4&&F.activeDur>0.5)return {intent:'vui',conf:clamp(62+(0.4-F.voicedRatio)*60+Math.min(2,F.activeDur)*6)};
-  if(F.pitch>0&&F.pitch<230)return {intent:'gu',conf:clamp(65+(230-F.pitch)*0.25)};
-  if(F.syl>=2&&F.meanSeg<0.2)return {intent:'phankhich',conf:clamp(60+F.syl*5)};
-  if(F.syl>=3)return {intent:'goi',conf:clamp(58+F.syl*6)};
-  if(F.longest>=0.6){
-    if((F.trend==='xuong'&&F.pitch<560)||F.pitch<470)return {intent:'than',conf:clamp(60+(560-F.pitch)*0.15)};
-    return {intent:'doi',conf:clamp(62+F.longest*10+(F.trend==='len'?8:0))};
-  }
-  return {intent:'chao',conf:clamp(70-F.longest*20+(F.syl===1?8:0))};
-}
-
-if(typeof module!=='undefined')module.exports={synthFromText,analyze,classify,parseMeoText,SR};
-
-</script>
-<script>
-(function(){
-const $=id=>document.getElementById(id);
-const INTENTS={
-  chao:{label:'Chào hỏi',note:'Meo ngắn, gọn, một hai tiếng: thường là lời chào hoặc lời đáp khi thấy người quen.'},
-  doi:{label:'Đòi hỏi',note:'Meo kéo dài, giọng cao hoặc đi lên ở cuối: thường là yêu cầu muốn được đáp ứng ngay, như đòi ăn hay đòi mở cửa.'},
-  goi:{label:'Gọi, đòi chú ý',note:'Nhiều tiếng meo liên tiếp: mèo đang cố gây chú ý. Kêu càng dồn dập, bé càng sốt ruột.'},
-  than:{label:'Than phiền',note:'Meo trầm, kéo dài và đi xuống: thường thể hiện khó chịu hoặc phàn nàn.'},
-  vui:{label:'Hài lòng',note:'Tiếng rừ rừ đều và không có cao độ rõ: thường là lúc thư giãn, dễ chịu. Mèo đôi khi cũng rừ khi mệt hoặc đau, nên hãy để ý thêm dáng vẻ của bé.'},
-  khe:{label:'Cảnh cáo',note:'Âm rè như xì hơi, không có cao độ: mèo đang sợ hoặc cảnh cáo. Nên lùi lại và cho bé không gian.'},
-  gu:{label:'Đe doạ',note:'Âm gừ trầm, dưới khoảng 230 Hz: mèo đang giữ lãnh thổ, giữ đồ ăn hoặc đe doạ.'},
-  phankhich:{label:'Phấn khích',note:'Chuỗi tiếng ngắn, líu lo, giọng đi lên: hay gặp khi mèo thấy chim, thấy con mồi hoặc đồ chơi.'},
-  im:{label:'Chưa nghe rõ',note:'Không tìm thấy tiếng kêu đủ to. Đưa máy lại gần bé hơn, giữ yên lặng xung quanh rồi thu lại.'}
-};
-const PHRASES={
-  chao:{hoang:['Trẫm đã ngự giá về. Ngươi có thể cúi chào.','Ồ, sen đó à. Trẫm cho phép ngươi vuốt ve, một lần thôi.','Trẫm thấy ngươi rồi. Lui ra làm việc tiếp đi.'],
-        nung:['Sen ơi, con ở đây nè!','Sen về rồi hả? Con nhớ sen quá trời.','Chào buổi sáng sen, ôm con cái coi.'],
-        dao:['Ê, về rồi đó hả mày.','Ừ, chào. Có gì ăn không?','Thấy rồi, khỏi kêu.']},
-  doi:{hoang:['Bát của trẫm đã thấy đáy. Ngươi định để trẫm chết đói sao?','Mở cửa. Ngay. Trẫm không nhắc lại.','Pate. Loại ngon. Không phải hạt khô.'],
-       nung:['Sen ơi con đói quá à, cho con pate đi mà.','Mở cửa cho con ra ban công chơi xíu thôi, năn nỉ đó!','Sen ơi nước của con hết rồi, thay nước mới cho con đi.'],
-       dao:['Đồ ăn đâu? Tao chờ nãy giờ rồi đó.','Mở cửa lẹ lên, tao có việc bên ngoài.','Đổ thêm hạt vô, chén trống trơn rồi kìa.']},
-  goi:{hoang:['Sen! Sen! Lại đây trẫm bảo.','Ngươi đang bận gì mà quan trọng hơn trẫm?','Trẫm gọi đến lần thứ ba rồi đấy.'],
-       nung:['Sen ơi sen à, nhìn con nè, nhìn con nè!','Bỏ điện thoại xuống chơi với con đi mà.','Sen đâu rồi? Con tìm sen nãy giờ á.'],
-       dao:['Ê, mày nghe tao nói không đó?','Quay qua đây coi, tao kêu ba lần rồi.','Đừng giả bộ không nghe nha.']},
-  than:{hoang:['Thật là bất kính. Trẫm rất không hài lòng.','Cát vệ sinh chưa thay. Trẫm phẫn nộ.','Ngươi về trễ. Trẫm ghi nhận tội này.'],
-        nung:['Hông chịu đâu, sen bỏ con ở nhà một mình cả ngày.','Con buồn lắm á, sao sen không cho con lên giường?','Sen hứa chơi với con mà sen quên rồi.'],
-        dao:['Chán mày thiệt sự.','Lại hạt khô nữa hả? Ăn hoài ngán rồi.','Nhà gì mà ồn quá, ngủ không được.']},
-  vui:{hoang:['Được. Ngươi vuốt đúng chỗ. Tiếp tục.','Hôm nay trẫm hài lòng. Ngươi được miễn tội.','Chỗ nắng này tạm chấp nhận được.'],
-       nung:['Sướng quá sen ơi, gãi thêm chỗ cằm đi.','Con thương sen nhất trên đời luôn.','Cho con nằm trong lòng sen thêm xíu nữa nha.'],
-       dao:['Ờ, cũng được. Đừng có ngừng.','Hôm nay tao vui, tha cho mày đó.','Chỗ này êm đó, tao chiếm luôn.']},
-  khe:{hoang:['Lui ra! Kẻ nào dám mạo phạm long thể?','Thêm một bước nữa là ngươi biết tay trẫm.','Cái máy hút bụi đó, đem ra khỏi cung ngay.'],
-       nung:['Đừng mà! Con sợ, để con yên đi!','Con không thích cái đó đâu, cất đi!','Ai vậy? Con không quen, con trốn đây.'],
-       dao:['Biến! Đụng vô là ăn móng đó.','Lùi lại. Tao nói lần cuối.','Mày muốn kiếm chuyện hả?']},
-  gu:{hoang:['Đây là lãnh thổ của trẫm. Rút lui.','Trẫm đang dùng bữa. Đừng ai lại gần.','Con mèo kia dám bén mảng tới hoàng cung?'],
-      nung:['Con không vui đâu nha, đừng lấy đồ chơi của con.','Con mèo nhà bên lại qua nữa rồi sen ơi!','Đó là chén của con mà!'],
-      dao:['Khu này của tao. Đi chỗ khác.','Đứa nào động vô chén cơm của tao?','Nhìn gì? Muốn thử không?']},
-  phankhich:{hoang:['Có con chim ngoài cửa sổ. Trẫm muốn nó. Ngay.','Trẫm đang đi săn. Giữ im lặng.','Con ruồi kia sẽ là chiến lợi phẩm của trẫm.'],
-             nung:['Sen ơi có con chim kìa, con muốn bắt nó!','Ui đồ chơi mới hả? Cho con, cho con!','Sen ơi con thấy con thằn lằn trên tường!'],
-             dao:['Con thằn lằn kia, đứng yên đó cho tao.','Kéo cái sợi dây đó lại đây, tao vờn tí.','Chim ơi xuống đây nói chuyện coi.']},
-  im:{hoang:['Trẫm chưa nói gì cả.'],nung:['Con chưa kêu mà sen.'],dao:['Tao có nói gì đâu.']}
-};
-const TREND={len:'Đi lên',xuong:'Đi xuống',vom:'Vòm',ngang:'Ngang'};
-const PRESETS=['meo','meooooo?','meo meo meo','meooo...','rừ rừ','khèèè','gừừừ','mrrp mrrp mrrp'];
-
-const S={persona:'nung',intent:null,idx:0,conf:0,F:null,audio:null,label:''};
-try{const p=localStorage.getItem('meongu.persona');if(p&&PHRASES.chao[p])S.persona=p;}catch(e){}
-
-let ctx=null;
-function getCtx(){if(!ctx){const C=window.AudioContext||window.webkitAudioContext;ctx=new C();}if(ctx.state==='suspended')ctx.resume();return ctx;}
-let playing=null;
-function play(){
-  if(!S.audio)return;
-  try{
-    const c=getCtx();
-    if(playing){try{playing.stop();}catch(e){}}
-    const b=c.createBuffer(1,S.audio.samples.length,S.audio.sampleRate);
-    b.copyToChannel?b.copyToChannel(S.audio.samples,0):b.getChannelData(0).set(S.audio.samples);
-    const src=c.createBufferSource();src.buffer=b;src.connect(c.destination);src.start();playing=src;
-  }catch(e){}
-}
-
-function css(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();}
-
-function runAnalysis(samples,sr,label,opts){
-  const F=analyze(samples,sr);const R=classify(F);
-  S.F=F;S.intent=R.intent;S.conf=R.conf;S.audio={samples,sampleRate:sr};S.label=label;
-  const list=PHRASES[S.intent][S.persona];S.idx=Math.floor(Math.random()*list.length);
-  render();drawChart();
-  if(!opts||!opts.silentLog)logHistory();
-}
-
-function phrase(){const l=PHRASES[S.intent][S.persona];return l[S.idx%l.length];}
-
-function render(){
-  if(!S.intent)return;
-  $('src').textContent=S.label;
-  $('intent').querySelector('span').textContent=INTENTS[S.intent].label;
-  $('quote').textContent=phrase();
-  $('note').textContent=INTENTS[S.intent].note;
-  $('confTxt').textContent=S.intent==='im'?'—':S.conf+'%';
-  $('confBar').style.width=(S.intent==='im'?0:S.conf)+'%';
-  document.querySelectorAll('#persona button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===S.persona)));
-  const F=S.F;const fmt=(v,d)=>v.toFixed(d).replace('.',',');
-  $('r-dur').textContent=fmt(F.activeDur,2)+' s';
-  $('r-syl').textContent=String(F.syl);
-  $('r-pitch').textContent=F.pitch>0?Math.round(F.pitch)+' Hz':'—';
-  $('r-trend').textContent=F.pitch>0?TREND[F.trend]:'—';
-  $('r-voiced').textContent=Math.round(F.voicedRatio*100)+'%';
-  $('r-noise').textContent=Math.round(Math.min(1,F.zcr/0.5)*100)+'%';
-}
-
-function drawChart(){
-  const cv=$('chart');const F=S.F;if(!F)return;
-  const dpr=window.devicePixelRatio||1;const W=cv.clientWidth,H=cv.clientHeight;
-  cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);
-  const padL=40,padR=52,padT=12,padB=26;const iw=W-padL-padR,ih=H-padT-padB;
-  const T=Math.max(F.totalDur,0.5);
-  const ink=css('--ink'),muted=css('--muted'),line=css('--line'),ginger=css('--ginger'),teal=css('--teal'),sunken=css('--sunken');
-  g.clearRect(0,0,W,H);
-  g.font='11px '+css('--f-mono');
-  // segments
-  g.fillStyle=sunken;
-  for(const s of F.segs){const x0=padL+(F.frames[s.start].t/T)*iw,x1=padL+((F.frames[s.end].t+0.04)/T)*iw;g.fillRect(x0,padT,Math.max(2,x1-x0),ih);}
-  // pitch grid (log)
-  const lo=Math.log(70),hi=Math.log(1600);const py=f=>padT+ih-(Math.log(f)-lo)/(hi-lo)*ih;
-  g.strokeStyle=line;g.lineWidth=1;g.fillStyle=muted;g.textAlign='left';g.textBaseline='middle';
-  for(const f of [100,200,500,1000]){const y=Math.round(py(f))+.5;g.beginPath();g.moveTo(padL,y);g.lineTo(padL+iw,y);g.stroke();g.fillText(f+' Hz',padL+iw+6,y);}
-  // time ticks
-  g.textAlign='center';g.textBaseline='top';
-  const step=T>6?2:T>2.5?1:0.5;
-  for(let t=0;t<=T+1e-6;t+=step){const x=padL+(t/T)*iw;g.fillText(String(+t.toFixed(1)).replace('.',',')+'s',x,padT+ih+8);}
-  // amplitude envelope (bottom-up bars)
-  let pk=0;for(const f of F.frames)pk=Math.max(pk,f.rms);pk=pk||1;
-  g.fillStyle=ginger;g.globalAlpha=0.55;
-  const bw=Math.max(1,iw/(T/0.01)*0.9);
-  for(const f of F.frames){const h=(f.rms/pk)*ih*0.9;const x=padL+(f.t/T)*iw;g.fillRect(x,padT+ih-h,bw,h);}
-  g.globalAlpha=1;
-  // pitch dots
-  g.fillStyle=teal;
-  for(const f of F.frames){if(f.f0>0){const x=padL+((f.t+0.02)/T)*iw;g.beginPath();g.arc(x,py(f.f0),2.4,0,Math.PI*2);g.fill();}}
-  // axis
-  g.strokeStyle=muted;g.beginPath();g.moveTo(padL,padT+ih+.5);g.lineTo(padL+iw,padT+ih+.5);g.stroke();
-  g.save();g.translate(12,padT+ih/2);g.rotate(-Math.PI/2);g.textAlign='center';g.textBaseline='middle';g.fillStyle=muted;g.fillText('Độ lớn',0,0);g.restore();
-}
-
-// ---------- history ----------
-let H=[];try{H=JSON.parse(localStorage.getItem('meongu.history')||'[]')||[];}catch(e){H=[];}
-function logHistory(){
-  const d=new Date();
-  H.unshift({src:S.label,intent:S.intent,text:phrase(),t:d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})});
-  H=H.slice(0,8);try{localStorage.setItem('meongu.history',JSON.stringify(H));}catch(e){}
-  renderHistory();
-}
-function renderHistory(){
-  const ol=$('hList');ol.textContent='';
-  $('hEmpty').hidden=H.length>0;
-  for(const h of H){
-    const li=document.createElement('li');
-    const a=document.createElement('span');a.className='h-src';a.textContent=h.t+' · '+h.src;
-    const b=document.createElement('span');b.className='h-txt';b.textContent=h.text;
-    const c=document.createElement('span');c.className='h-int';c.textContent=(INTENTS[h.intent]||{}).label||'';
-    li.append(a,b,c);ol.append(li);
-  }
-}
-
-// ---------- presets & typing ----------
-PRESETS.forEach(p=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=p;
-  b.onclick=()=>{fromText(p);};$('chips').append(b);});
-function fromText(t){const s=synthFromText(t,(Math.random()*1e9)|0);
-  if(!s.events.length){runAnalysis(new Float32Array(SR),SR,'Gõ: '+t);return;}
-  runAnalysis(s.samples,s.sampleRate,'Gõ: '+t);play();}
-$('typer').addEventListener('submit',e=>{e.preventDefault();const t=$('txt').value.trim();if(t)fromText(t);});
-$('again').onclick=()=>{if(!S.intent)return;S.idx++;render();};
-$('replay').onclick=play;
-document.querySelectorAll('#persona button').forEach(b=>b.onclick=()=>{S.persona=b.dataset.p;try{localStorage.setItem('meongu.persona',S.persona);}catch(e){}render();});
-
-// ---------- recorder ----------
-const MAX=8;let rec=null;
-const live=$('live');
-let liveLevels=[];
-function liveDraw(){
-  const dpr=window.devicePixelRatio||1,W=live.clientWidth,Hh=live.clientHeight;
-  if(live.width!==W*dpr){live.width=W*dpr;live.height=Hh*dpr;}
-  const g=live.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,Hh);
-  const lv=rec?rec.levels:liveLevels;const n=Math.floor(W/4);const start=Math.max(0,lv.length-n);
-  g.fillStyle=rec?css('--rec'):css('--ginger');
-  for(let i=start;i<lv.length;i++){const v=Math.min(1,lv[i]*4);const h=Math.max(2,v*(Hh-8));g.fillRect((i-start)*4+1,(Hh-h)/2,2,h);}
-  if(!rec&&!liveLevels.length){g.fillStyle=css('--line');g.fillRect(0,Hh/2-0.5,W,1);}
-}
-liveDraw();
-function setRecUI(on){
-  $('recBtn').classList.toggle('on',on);$('icoMic').hidden=on;$('icoStop').hidden=!on;
-  $('recBtn').setAttribute('aria-label',on?'Dừng thu':'Bắt đầu thu âm');
-  $('recState').textContent=on?'Đang nghe… bấm để dừng':'Bấm để thu tiếng mèo';
-  if(!on)$('ring').style.transform='scale(1)';
-}
-function micError(err){
-  const m=$('micMsg');m.hidden=false;
-  const name=err&&err.name;
-  let t,b;
-  let framed=false;try{framed=window.self!==window.top;}catch(e){framed=true;}
-  if(framed&&(name==='NotAllowedError'||name==='SecurityError'||!name)){b='Khung xem trước này không cho dùng micro.';
-    t='Hãy mở file meo-ngu.html bằng Chrome hoặc Edge (chuột phải vào file, chọn Open with > Google Chrome), rồi bấm nút thu và chọn Cho phép.';}
-  else if(name==='NotAllowedError'&&/system/i.test(err.message||'')){b='Windows đang chặn micro của Chrome.';
-    t='Mở Settings > Privacy & security > Microphone, bật "Microphone access" và "Let desktop apps access your microphone", rồi tải lại trang.';}
-  else if(name==='NotAllowedError'&&/dismiss/i.test(err.message||'')){b='Bạn chưa bấm Cho phép.';
-    t='Chrome đã hỏi quyền micro ở góc trái thanh địa chỉ nhưng câu hỏi bị bỏ qua. Bấm nút thu lần nữa, rồi chọn "Allow / Cho phép" ở ô hiện ra cạnh thanh địa chỉ. Nếu không thấy ô đó, bấm biểu tượng micro bên trái địa chỉ trang.';}
-  else if(name==='NotAllowedError'||name==='SecurityError'){b='Micro đang bị chặn.';
-    t='Bấm biểu tượng ổ khoá hoặc micro trên thanh địa chỉ, chọn Cho phép, rồi thử lại. Nếu bạn đang xem trong một khung xem trước (ví dụ trong ứng dụng chat), hãy mở file bằng Chrome hoặc Edge.';}
-  else if(name==='NotFoundError'){b='Không tìm thấy micro.';t='Cắm tai nghe có micro hoặc dùng điện thoại, rồi thử lại.';}
-  else {b='Trình duyệt chưa cho dùng micro ở trang này.';t='Micro chỉ hoạt động khi mở bằng Chrome/Edge trên máy tính, hoặc khi trang chạy trên một địa chỉ https. Trong lúc chờ, bạn vẫn thử được bằng các mẫu hoặc gõ tiếng mèo bên dưới.';}
-  m.innerHTML='';const bb=document.createElement('b');bb.textContent=b;m.append(bb,document.createTextNode(t));
-}
-async function startRec(){
-  $('micMsg').hidden=true;
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){micError(null);return;}
-  try{getCtx();}catch(e){}
-  let stream;
-  try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});}
-  catch(e){micError(e);return;}
-  const c=getCtx();
-  const srcN=c.createMediaStreamSource(stream);
-  const proc=(c.createScriptProcessor||c.createJavaScriptNode).call(c,2048,1,1);
-  const mute=c.createGain();mute.gain.value=0;
-  rec={stream,srcN,proc,mute,chunks:[],levels:[],len:0,sr:c.sampleRate,t0:performance.now()};
-  proc.onaudioprocess=e=>{
-    if(!rec)return;const d=e.inputBuffer.getChannelData(0);rec.chunks.push(new Float32Array(d));rec.len+=d.length;
-    const k=Math.max(1,Math.floor(d.length/4));
-    for(let j=0;j<4;j++){let s=0;for(let i=j*k;i<(j+1)*k&&i<d.length;i++)s+=d[i]*d[i];rec.levels.push(Math.sqrt(s/k));}
-    if(rec.len/rec.sr>=MAX)stopRec();
-  };
-  srcN.connect(proc);proc.connect(mute);mute.connect(c.destination);
-  setRecUI(true);tick();
-}
-function tick(){
-  if(!rec)return;
-  const sec=Math.min(MAX,rec.len/rec.sr);
-  $('recTime').textContent=sec.toFixed(1).replace('.',',')+' / 8,0 giây';
-  const lv=rec.levels.length?rec.levels[rec.levels.length-1]:0;
-  $('ring').style.transform='scale('+(1+Math.min(0.35,lv*2.5))+')';
-  liveDraw();requestAnimationFrame(tick);
-}
-function stopRec(){
-  if(!rec)return;const r=rec;rec=null;
-  try{r.proc.disconnect();r.srcN.disconnect();r.mute.disconnect();}catch(e){}
-  r.stream.getTracks().forEach(t=>t.stop());
-  setRecUI(false);
-  const out=new Float32Array(r.len);let o=0;for(const ch of r.chunks){out.set(ch,o);o+=ch.length;}
-  $('recState').textContent='Đang phân tích…';
-  setTimeout(()=>{
-    const d=new Date();
-    runAnalysis(out,r.sr,'Thu âm lúc '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
-    $('recState').textContent='Bấm để thu lần nữa';
-    // keep last levels visible
-    liveLevels=r.levels;liveDraw();
-  },30);
-}
-$('recBtn').onclick=()=>{rec?stopRec():startRec();};
-window.addEventListener('resize',()=>{drawChart();if(!rec)liveDraw();});
-const mq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
-if(mq&&mq.addEventListener)mq.addEventListener('change',()=>{drawChart();liveDraw();});
-
-// initial example (no sound until the user acts)
-renderHistory();
-const ex=synthFromText('meooooo?',4242);
-runAnalysis(ex.samples,ex.sampleRate,'Ví dụ: meooooo?',{silentLog:true});
-})();
-
-</script>
+<script src="assets/config.js?v=2"></script>
+<script src="assets/core.js?v=2"></script>
+<script src="assets/app.js?v=2"></script>
 </body>
 </html>
