@@ -1,4 +1,4 @@
-name = "meo-ngu-api"
+name = "meo-ngu"
 main = "src/index.js"
 compatibility_date = "2025-08-15"
 

@@ -12,7 +12,7 @@ Bạn cần: tài khoản Cloudflare (gói miễn phí đủ dùng) và một AP
 ## 2. Tạo Worker từ GitHub
 1. **Workers & Pages → Create → Import a repository** → chọn `hieunguyen1312/meo-ngu`.
 2. **Root directory**: `worker`. **Deploy command**: `npx wrangler deploy`.
-3. Deploy. Ghi lại địa chỉ dạng `https://meo-ngu-api.<tên-bạn>.workers.dev`.
+3. Deploy. Ghi lại địa chỉ dạng `https://meo-ngu.<tên-bạn>.workers.dev`.
 
 ## 3. Thêm API key Claude (tự làm, không gửi key cho ai)
 Worker → **Settings → Variables and Secrets → Add** → loại **Secret**, tên `ANTHROPIC_API_KEY`, giá trị là key của bạn → Deploy.
@@ -22,7 +22,7 @@ Kiểm tra: mở `https://<địa-chỉ-worker>/api/health` phải thấy `{"ok"
 ## 4. Nối frontend với backend
 Sửa `assets/config.js`:
 ```js
-window.MEONGU_API = 'https://meo-ngu-api.<tên-bạn>.workers.dev';
+window.MEONGU_API = 'https://meo-ngu.<tên-bạn>.workers.dev';
 ```
 Đẩy lên GitHub, khoảng 1 phút sau link GitHub Pages sẽ dùng backend mới.
 
