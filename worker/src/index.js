@@ -367,6 +367,7 @@ async function loopOpenAI(env, user, cat, provider, system, history, userContent
       let d;
       try { d = await env.AI.run(env.WORKERS_AI_MODEL || '@cf/google/gemma-4-26b-a4b-it', { messages, tools, max_tokens: 1500 }); }
       catch (e) { throw new ProviderError('workersai', 503, String(e && e.message || e).slice(0, 300)); }
+      console.log('workersai step', step, JSON.stringify(d).slice(0, 1500));
       if (d && d.choices && d.choices[0]) msg = d.choices[0].message;
       else msg = { role: 'assistant', content: d && d.response || '', tool_calls: (d && d.tool_calls || []).map((t, i) => ({ id: t.id || 'call_' + step + '_' + i, type: 'function', function: { name: t.name, arguments: typeof t.arguments === 'string' ? t.arguments : JSON.stringify(t.arguments || {}) } })) };
     }
