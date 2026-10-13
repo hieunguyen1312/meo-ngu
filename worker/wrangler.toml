@@ -11,7 +11,7 @@ AGENT_DAILY_LIMIT = "30"
 [[d1_databases]]
 binding = "DB"
 database_name = "meo-ngu"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "fb149aa9-5852-4252-99dd-4f4cda2465bf"
 
 # Optional: raw audio that owners choose to share. Uncomment after creating the bucket.
 # [[r2_buckets]]
