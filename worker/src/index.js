@@ -357,7 +357,7 @@ async function loopOpenAI(env, user, cat, provider, system, history, userContent
     if (provider === 'gemini') {
       const r = await fetch((env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai') + '/chat/completions', {
         method: 'POST', headers: { authorization: 'Bearer ' + env.GEMINI_API_KEY, 'content-type': 'application/json' },
-        body: JSON.stringify({ model: env.GEMINI_MODEL || 'gemini-3.1-flash-lite', messages, tools, tool_choice: 'auto', max_tokens: 1500 }),
+        body: JSON.stringify({ model: env.GEMINI_MODEL || 'gemini-3.1-flash-lite', messages, tools, tool_choice: 'auto', max_tokens: 4096 }),
       });
       if (!r.ok) throw new ProviderError('gemini', r.status, (await r.text()).slice(0, 300));
       const d = await r.json();
@@ -365,9 +365,9 @@ async function loopOpenAI(env, user, cat, provider, system, history, userContent
       if (!msg) throw new ProviderError('gemini', 502, 'empty');
     } else {
       let d;
-      try { d = await env.AI.run(env.WORKERS_AI_MODEL || '@cf/google/gemma-4-26b-a4b-it', { messages, tools, max_tokens: 1500 }); }
+      try { d = await env.AI.run(env.WORKERS_AI_MODEL || '@cf/google/gemma-4-26b-a4b-it', { messages, tools, max_tokens: 4096 }); }
       catch (e) { throw new ProviderError('workersai', 503, String(e && e.message || e).slice(0, 300)); }
-      console.log('workersai step', step, JSON.stringify(d).slice(0, 1500));
+      if (d && d.choices && d.choices[0] && d.choices[0].finish_reason === 'length') console.warn('workersai hit token limit at step', step);
       if (d && d.choices && d.choices[0]) msg = d.choices[0].message;
       else msg = { role: 'assistant', content: d && d.response || '', tool_calls: (d && d.tool_calls || []).map((t, i) => ({ id: t.id || 'call_' + step + '_' + i, type: 'function', function: { name: t.name, arguments: typeof t.arguments === 'string' ? t.arguments : JSON.stringify(t.arguments || {}) } })) };
     }
