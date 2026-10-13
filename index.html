@@ -126,7 +126,7 @@ footer{color:var(--muted);font-size:13px;max-width:70ch}
       <h1>Mèo<span>.</span>Ngữ</h1>
       <p>Thu tiếng mèo, đọc ra tiếng người.</p>
     </div>
-    <span class="chiprow-head">Phiên bản 1.0 · chạy hoàn toàn trên máy</span>
+    <span class="chiprow-head">Phiên bản 1.1 · chạy hoàn toàn trên máy</span>
   </header>
 
   <section class="bench">
@@ -588,6 +588,10 @@ function micError(err){
   let framed=false;try{framed=window.self!==window.top;}catch(e){framed=true;}
   if(framed&&(name==='NotAllowedError'||name==='SecurityError'||!name)){b='Khung xem trước này không cho dùng micro.';
     t='Hãy mở file meo-ngu.html bằng Chrome hoặc Edge (chuột phải vào file, chọn Open with > Google Chrome), rồi bấm nút thu và chọn Cho phép.';}
+  else if(name==='NotAllowedError'&&/system/i.test(err.message||'')){b='Windows đang chặn micro của Chrome.';
+    t='Mở Settings > Privacy & security > Microphone, bật "Microphone access" và "Let desktop apps access your microphone", rồi tải lại trang.';}
+  else if(name==='NotAllowedError'&&/dismiss/i.test(err.message||'')){b='Bạn chưa bấm Cho phép.';
+    t='Chrome đã hỏi quyền micro ở góc trái thanh địa chỉ nhưng câu hỏi bị bỏ qua. Bấm nút thu lần nữa, rồi chọn "Allow / Cho phép" ở ô hiện ra cạnh thanh địa chỉ. Nếu không thấy ô đó, bấm biểu tượng micro bên trái địa chỉ trang.';}
   else if(name==='NotAllowedError'||name==='SecurityError'){b='Micro đang bị chặn.';
     t='Bấm biểu tượng ổ khoá hoặc micro trên thanh địa chỉ, chọn Cho phép, rồi thử lại. Nếu bạn đang xem trong một khung xem trước (ví dụ trong ứng dụng chat), hãy mở file bằng Chrome hoặc Edge.';}
   else if(name==='NotFoundError'){b='Không tìm thấy micro.';t='Cắm tai nghe có micro hoặc dùng điện thoại, rồi thử lại.';}
