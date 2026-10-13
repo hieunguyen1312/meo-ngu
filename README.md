@@ -34,7 +34,7 @@ Không có "ngôn ngữ mèo" chung: mèo trưởng thành kêu meo chủ yếu 
 
 ## Agent
 
-`POST /api/agent` gọi Claude với 5 tools: `get_cat_profile`, `get_sound_stats`, `get_recent_sounds`, `get_observations`, `save_observation`. Agent luôn xem dữ liệu thật của bé trước khi nhận định, không chẩn đoán bệnh, không khuyên phạt mèo, và nhắc đi thú y khi có dấu hiệu nguy hiểm. Giới hạn mặc định 30 câu hỏi mỗi thiết bị mỗi ngày (`AGENT_DAILY_LIMIT`).
+`POST /api/agent` gọi AI theo thứ tự Gemini (miễn phí) → Workers AI (miễn phí) → Claude (trả phí, tuỳ chọn), với 5 tools: `get_cat_profile`, `get_sound_stats`, `get_recent_sounds`, `get_observations`, `save_observation`. Agent luôn xem dữ liệu thật của bé trước khi nhận định, không chẩn đoán bệnh, không khuyên phạt mèo, và nhắc đi thú y khi có dấu hiệu nguy hiểm. Giới hạn mặc định 10 câu hỏi mỗi thiết bị mỗi ngày (`AGENT_DAILY_LIMIT`).
 
 ## Quyền riêng tư
 

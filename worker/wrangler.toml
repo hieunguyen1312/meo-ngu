@@ -4,9 +4,18 @@ compatibility_date = "2025-08-15"
 
 [vars]
 ALLOWED_ORIGINS = "https://hieunguyen1312.github.io,http://localhost:8080"
-AGENT_MODEL = "claude-sonnet-5-5"
-AGENT_DAILY_LIMIT = "30"
-# Secret (never commit): npx wrangler secret put ANTHROPIC_API_KEY
+# Agent providers, tried in order. One question stays on one provider; failures fall through.
+AGENT_PROVIDERS = "gemini,workersai,anthropic"
+GEMINI_MODEL = "gemini-3.1-flash-lite"
+WORKERS_AI_MODEL = "@cf/google/gemma-4-26b-a4b-it"
+AGENT_MODEL = "claude-haiku-5-5"
+AGENT_DAILY_LIMIT = "10"
+# Secrets (never commit), set in the dashboard or with `npx wrangler secret put`:
+#   GEMINI_API_KEY     free key from https://aistudio.google.com/apikey
+#   ANTHROPIC_API_KEY  optional paid fallback
+
+[ai]
+binding = "AI"
 
 [[d1_databases]]
 binding = "DB"

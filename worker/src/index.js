@@ -81,7 +81,7 @@ async function route(req, env, ctx) {
   const p = url.pathname.replace(/\/+$/, '') || '/';
   const M = req.method;
 
-  if (p === '/api/health') return json({ ok: true, agent: !!env.ANTHROPIC_API_KEY, audio: !!env.AUDIO });
+  if (p === '/api/health') return json({ ok: true, agent: providerChain(env).length > 0, providers: providerChain(env), audio: !!env.AUDIO });
   if (p === '/api/meta') return json({ contexts: CONTEXTS, outcomes: OUTCOMES, felineFive: FELINE_FIVE });
 
   const user = await auth(req, env);
@@ -248,7 +248,7 @@ const ctxKey = v => (typeof v === 'string' && CONTEXTS[v]) ? v : null;
 const outKey = v => (typeof v === 'string' && OUTCOMES[v]) ? v : null;
 const safeParse = s => { try { return JSON.parse(s); } catch { return null; } };
 const today = () => new Date().toISOString().slice(0, 10);
-const limit = env => Number(env.AGENT_DAILY_LIMIT) || 30;
+const limit = env => Number(env.AGENT_DAILY_LIMIT) || 10;
 
 async function addObservation(env, user, cat, kind, text, tags, author) {
   const k = ['behavior', 'body', 'routine', 'health', 'other'].includes(kind) ? kind : 'other';
@@ -338,52 +338,66 @@ async function runTool(env, user, cat, name, input) {
   return { error: 'unknown tool' };
 }
 
-async function agent(req, env, user) {
-  if (!env.ANTHROPIC_API_KEY) throw new HttpError(503, 'agent_off', 'Máy chủ chưa cấu hình trợ lý.');
-  const b = await readJson(req);
-  const cat = await ownCat(env, user, String(b.catId || ''));
-  const text = str(b.message, 2000, 'Câu hỏi');
-  if (!text) throw bad('Bạn chưa nhập câu hỏi.');
+// ---- LLM providers. One question stays on one provider; on failure the next one takes over. ----
+class ProviderError extends Error { constructor(provider, status, detail) { super(`${provider} ${status}`); this.provider = provider; this.status = status; this.detail = detail; } }
+const toOpenAITools = () => TOOLS.map(t => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.input_schema } }));
 
-  // Daily quota per device account.
-  const d = today();
-  const calls = user.agent_day === d ? user.agent_calls : 0;
-  if (calls >= limit(env)) throw new HttpError(429, 'quota', `Bạn đã dùng hết ${limit(env)} lượt hỏi hôm nay. Mai quay lại nhé.`);
-  await env.DB.prepare('UPDATE users SET agent_day = ?, agent_calls = ? WHERE id = ?').bind(d, calls + 1, user.id).run();
+function providerChain(env) {
+  const want = (env.AGENT_PROVIDERS || 'gemini,workersai,anthropic').split(',').map(s => s.trim());
+  const ok = { gemini: !!env.GEMINI_API_KEY, workersai: !!env.AI, anthropic: !!env.ANTHROPIC_API_KEY };
+  return want.filter(p => ok[p]);
+}
 
-  const hist = (await env.DB.prepare('SELECT role, content FROM messages WHERE cat_id = ? ORDER BY created_at DESC LIMIT 12').bind(cat.id).all()).results.reverse();
-  const messages = hist.map(h => ({ role: h.role, content: h.content }));
-  // Context the page attaches about the latest recording, if any.
-  let userContent = text;
-  if (b.lastSound && typeof b.lastSound === 'object') {
-    const ls = JSON.stringify(b.lastSound).slice(0, 1500);
-    userContent = `${text}\n\n[Tiếng kêu vừa thu trong app: ${ls}]`;
+// OpenAI-style loop, used by Gemini (OpenAI-compatible endpoint) and Workers AI.
+async function loopOpenAI(env, user, cat, provider, system, history, userContent, saved) {
+  const messages = [{ role: 'system', content: system }, ...history, { role: 'user', content: userContent }];
+  const tools = toOpenAITools();
+  for (let step = 0; step < 6; step++) {
+    let msg;
+    if (provider === 'gemini') {
+      const r = await fetch((env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai') + '/chat/completions', {
+        method: 'POST', headers: { authorization: 'Bearer ' + env.GEMINI_API_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({ model: env.GEMINI_MODEL || 'gemini-3.1-flash-lite', messages, tools, tool_choice: 'auto', max_tokens: 1500 }),
+      });
+      if (!r.ok) throw new ProviderError('gemini', r.status, (await r.text()).slice(0, 300));
+      const d = await r.json();
+      msg = d.choices && d.choices[0] && d.choices[0].message;
+      if (!msg) throw new ProviderError('gemini', 502, 'empty');
+    } else {
+      let d;
+      try { d = await env.AI.run(env.WORKERS_AI_MODEL || '@cf/google/gemma-4-26b-a4b-it', { messages, tools, max_tokens: 1500 }); }
+      catch (e) { throw new ProviderError('workersai', 503, String(e && e.message || e).slice(0, 300)); }
+      if (d && d.choices && d.choices[0]) msg = d.choices[0].message;
+      else msg = { role: 'assistant', content: d && d.response || '', tool_calls: (d && d.tool_calls || []).map((t, i) => ({ id: t.id || 'call_' + step + '_' + i, type: 'function', function: { name: t.name, arguments: typeof t.arguments === 'string' ? t.arguments : JSON.stringify(t.arguments || {}) } })) };
+    }
+    const calls = msg.tool_calls || [];
+    if (!calls.length) return (typeof msg.content === 'string' ? msg.content : '').trim();
+    // Keep the assistant turn exactly as returned (Gemini 3 needs extra_content.thought_signature back).
+    messages.push({ ...msg, role: 'assistant', content: msg.content || '' });
+    for (const c of calls) {
+      let input = {}; try { input = JSON.parse(c.function && c.function.arguments || '{}'); } catch { }
+      const name = c.function && c.function.name;
+      let out; try { out = await runTool(env, user, cat, name, input); if (name === 'save_observation') saved.push(input.text); } catch (e) { out = { error: e.message || 'tool failed' }; }
+      messages.push({ role: 'tool', tool_call_id: c.id, name, content: JSON.stringify(out).slice(0, 8000) });
+    }
   }
-  messages.push({ role: 'user', content: userContent });
-  // Anthropic requires alternating roles starting with user.
-  while (messages.length && messages[0].role !== 'user') messages.shift();
+  return '';
+}
 
-  const model = env.AGENT_MODEL || 'claude-sonnet-5-5';
-  const saved = [];
-  let reply = '';
+async function loopAnthropic(env, user, cat, system, history, userContent, saved) {
+  const messages = [...history, { role: 'user', content: userContent }];
+  while (messages.length && messages[0].role !== 'user') messages.shift();
   for (let step = 0; step < 6; step++) {
     const r = await fetch((env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com') + '/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model, max_tokens: 1200, system: systemPrompt(cat), tools: TOOLS, messages }),
+      body: JSON.stringify({ model: env.AGENT_MODEL || 'claude-haiku-5-5', max_tokens: 1200, system, tools: TOOLS, messages }),
     });
-    if (!r.ok) {
-      const errText = await r.text();
-      console.error('anthropic', r.status, errText.slice(0, 500));
-      throw new HttpError(502, 'agent_upstream', r.status === 429 ? 'Trợ lý đang quá tải, thử lại sau ít phút.' : 'Trợ lý tạm thời không trả lời được.');
-    }
+    if (!r.ok) throw new ProviderError('anthropic', r.status, (await r.text()).slice(0, 300));
     const data = await r.json();
     messages.push({ role: 'assistant', content: data.content });
     const uses = data.content.filter(c => c.type === 'tool_use');
-    if (data.stop_reason !== 'tool_use' || !uses.length) {
-      reply = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
-      break;
-    }
+    if (data.stop_reason !== 'tool_use' || !uses.length) return data.content.filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
     const results = [];
     for (const u of uses) {
       let out;
@@ -393,6 +407,46 @@ async function agent(req, env, user) {
     }
     messages.push({ role: 'user', content: results });
   }
+  return '';
+}
+
+async function agent(req, env, user) {
+  const chain = providerChain(env);
+  if (!chain.length) throw new HttpError(503, 'agent_off', 'Máy chủ chưa cấu hình trợ lý.');
+  const b = await readJson(req);
+  const cat = await ownCat(env, user, String(b.catId || ''));
+  const text = str(b.message, 2000, 'Câu hỏi');
+  if (!text) throw bad('Bạn chưa nhập câu hỏi.');
+
+  const d = today();
+  const calls = user.agent_day === d ? user.agent_calls : 0;
+  if (calls >= limit(env)) throw new HttpError(429, 'quota', `Bạn đã dùng hết ${limit(env)} lượt hỏi hôm nay. Mai quay lại nhé.`);
+  await env.DB.prepare('UPDATE users SET agent_day = ?, agent_calls = ? WHERE id = ?').bind(d, calls + 1, user.id).run();
+
+  const hist = (await env.DB.prepare('SELECT role, content FROM messages WHERE cat_id = ? ORDER BY created_at DESC LIMIT 8').bind(cat.id).all()).results.reverse();
+  const history = hist.map(h => ({ role: h.role, content: h.content }));
+  let userContent = text;
+  if (b.lastSound && typeof b.lastSound === 'object') userContent = `${text}\n\n[Tiếng kêu vừa thu trong app: ${JSON.stringify(b.lastSound).slice(0, 1500)}]`;
+
+  // Pre-load profile and 14-day stats so most questions need one or two model calls instead of three.
+  const profile = await runTool(env, user, cat, 'get_cat_profile', {});
+  const stats = await runTool(env, user, cat, 'get_sound_stats', { days: 14 });
+  const system = systemPrompt(cat) + `\n\n# Dữ liệu đã nạp sẵn (không cần gọi lại get_cat_profile hay get_sound_stats 14 ngày)\nHồ sơ: ${JSON.stringify(profile)}\nThống kê 14 ngày: ${JSON.stringify(stats)}`;
+
+  const saved = [];
+  let reply = '', used = null, lastErr = null;
+  for (const p of chain) {
+    try {
+      reply = p === 'anthropic' ? await loopAnthropic(env, user, cat, system, history, userContent, saved)
+        : await loopOpenAI(env, user, cat, p, system, history, userContent, saved);
+      used = p;
+      if (reply) break;
+    } catch (e) {
+      lastErr = e;
+      console.error('provider failed', e.provider || p, e.status, e.detail || e.message);
+    }
+  }
+  if (!used) throw new HttpError(503, 'agent_busy', 'Chuyên gia đang bận, bạn thử lại sau ít phút nhé.');
   if (!reply) reply = 'Mình chưa trả lời được câu này, bạn thử hỏi lại ngắn gọn hơn nhé.';
 
   const t = now();
@@ -400,5 +454,5 @@ async function agent(req, env, user) {
     env.DB.prepare('INSERT INTO messages (id,cat_id,user_id,role,content,created_at) VALUES (?,?,?,?,?,?)').bind(uid(), cat.id, user.id, 'user', text, t),
     env.DB.prepare('INSERT INTO messages (id,cat_id,user_id,role,content,created_at) VALUES (?,?,?,?,?,?)').bind(uid(), cat.id, user.id, 'assistant', reply, t + 1),
   ]);
-  return json({ reply, savedObservations: saved, callsLeft: Math.max(0, limit(env) - calls - 1) });
+  return json({ reply, provider: used, savedObservations: saved, callsLeft: Math.max(0, limit(env) - calls - 1) });
 }

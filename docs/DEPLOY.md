@@ -14,10 +14,15 @@ Bạn cần: tài khoản Cloudflare (gói miễn phí đủ dùng) và một AP
 2. **Root directory**: `worker`. **Deploy command**: `npx wrangler deploy`.
 3. Deploy. Ghi lại địa chỉ dạng `https://meo-ngu.<tên-bạn>.workers.dev`.
 
-## 3. Thêm API key Claude (tự làm, không gửi key cho ai)
-Worker → **Settings → Variables and Secrets → Add** → loại **Secret**, tên `ANTHROPIC_API_KEY`, giá trị là key của bạn → Deploy.
+## 3. Thêm key AI (tự làm, không gửi key cho ai)
+Agent thử lần lượt: **Gemini (miễn phí)** → **Workers AI của Cloudflare (miễn phí, không cần key)** → Claude (trả phí, tuỳ chọn).
+1. Lấy key Gemini miễn phí: https://aistudio.google.com/apikey
+2. Worker → **Settings → Variables and Secrets → Add** → loại **Secret**, tên `GEMINI_API_KEY`, dán key → Deploy.
+3. (Tuỳ chọn) thêm Secret `ANTHROPIC_API_KEY` để có tầng dự phòng trả phí.
 
-Kiểm tra: mở `https://<địa-chỉ-worker>/api/health` phải thấy `{"ok":true,"agent":true,...}`.
+Lưu ý gói miễn phí của Gemini: Google được dùng nội dung để cải thiện sản phẩm và người duyệt có thể đọc; không dùng cho người dùng ở EU/UK/Thuỵ Sĩ; người dùng phải từ 18 tuổi. Hạn mức miễn phí khoảng vài trăm câu hỏi mỗi ngày và Google có thể thay đổi.
+
+Kiểm tra: mở `https://<địa-chỉ-worker>/api/health`, phải thấy `"agent":true` và danh sách `providers`.
 
 ## 4. Nối frontend với backend
 Sửa `assets/config.js`:
@@ -33,8 +38,11 @@ R2 → tạo bucket `meo-ngu-audio`, bỏ comment khối `[[r2_buckets]]` trong 
 | Biến | Mặc định | Ý nghĩa |
 |---|---|---|
 | `ALLOWED_ORIGINS` | GitHub Pages + localhost | Trang nào được gọi API |
-| `AGENT_MODEL` | `claude-sonnet-5-5` | Model cho agent. Đổi sang model nhỏ hơn để giảm chi phí khi có nhiều người dùng |
-| `AGENT_DAILY_LIMIT` | `30` | Số câu hỏi mỗi thiết bị mỗi ngày |
+| `AGENT_PROVIDERS` | `gemini,workersai,anthropic` | Thứ tự thử các nhà cung cấp AI |
+| `GEMINI_MODEL` | `gemini-3.1-flash-lite` | Model Gemini (gói miễn phí) |
+| `WORKERS_AI_MODEL` | `@cf/google/gemma-4-26b-a4b-it` | Model Workers AI |
+| `AGENT_MODEL` | `claude-haiku-5-5` | Model Claude cho tầng trả phí |
+| `AGENT_DAILY_LIMIT` | `10` | Số câu hỏi mỗi thiết bị mỗi ngày |
 
 ## Chạy thử trên máy
 ```bash
