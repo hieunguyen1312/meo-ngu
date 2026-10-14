@@ -135,6 +135,9 @@ fetch('base-model.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>
 const outcomeW={calmed:1,ignored:0.8,continued:0.5};
 function personalModel(catId){
   const S=soundsOf(catId).filter(s=>s.label&&s.label!=='khac'&&s.features&&s.features.vec).map(s=>({vec:s.features.vec,label:s.label,w:outcomeW[s.outcome]||0.8}));
+  // Balance contexts so a frequent one (e.g. hunger) does not drown out rare ones; measured on CatMeows, see docs/BENCHMARK.md.
+  const cnt={};S.forEach(s=>cnt[s.label]=(cnt[s.label]||0)+1);const nk=Object.keys(cnt).length||1;
+  S.forEach(s=>{s.w*=S.length/(nk*cnt[s.label]);});
   const m=buildModel(S);
   return m&&m.n>=6&&m.labels.length>=2?m:{notReady:true,n:S.length,labels:m?m.labels:[]};
 }
@@ -390,7 +393,7 @@ function renderBrain(){
   const acc=pm.notReady?null:(pm.n>=10?looAccuracy(pm):null);
   $('b-acc').textContent=acc==null?'—':acc+'%';
   let hint;
-  if(pm.notReady){const need=Math.max(0,6-pm.n);hint=need>0?`Gắn nhãn thêm ${need} tiếng kêu (ít nhất 2 ngữ cảnh khác nhau) để app bắt đầu học riêng bé ${cat().name}.`:`Cần ít nhất 2 ngữ cảnh khác nhau. Lần tới khi bé kêu vì lý do khác, hãy gắn nhãn nhé.`;}
+  if(pm.notReady){const need=Math.max(0,6-pm.n);hint=need>0?`Gắn nhãn thêm ${need} tiếng kêu (ít nhất 2 ngữ cảnh khác nhau) để app bắt đầu học riêng bé ${cat().name}. Khoảng 3 mẫu cho mỗi ngữ cảnh là đủ để app đoán sát hơn rõ rệt.`:`Cần ít nhất 2 ngữ cảnh khác nhau. Lần tới khi bé kêu vì lý do khác, hãy gắn nhãn nhé.`;}
   else if(acc==null)hint=`Mô hình riêng đã chạy. Độ chính xác ước tính hiện sau 10 mẫu; hiện có ${pm.n}.`;
   else {const weak=Object.entries(counts).filter(([k,v])=>v<5&&k!=='khac').map(([k])=>SHORT[k]);
     hint=`Độ chính xác ước tính bằng cách thử đoán lại từng mẫu cũ khi giấu nhãn của nó.${weak.length?' Ngữ cảnh còn ít mẫu: '+weak.join(', ')+'.':''}`;}

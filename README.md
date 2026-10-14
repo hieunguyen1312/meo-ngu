@@ -31,6 +31,7 @@ Không có "ngôn ngữ mèo" chung: mèo trưởng thành kêu meo chủ yếu 
 | `tools/ingest.mjs` | Nạp dữ liệu: CatMeows và clip của bạn → `base-model.json`. |
 | `docs/DEPLOY.md` | Các bước đưa backend lên Cloudflare. |
 | `docs/DATA.md` | Cách chuẩn bị và nạp dữ liệu huấn luyện. |
+| `docs/BENCHMARK.md` | Kết quả đo bằng CatMeows: mô hình riêng từng con 69% so với 40–45% khi đoán mèo lạ. |
 
 ## Agent
 

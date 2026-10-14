@@ -68,6 +68,8 @@ function bouts(x) {
 
 const samples = [];
 let fail = 0;
+// Inverse-frequency weights so the most common context does not dominate (see docs/BENCHMARK.md).
+const balance = arr => { const c = {}; arr.forEach(s => c[s.label] = (c[s.label] || 0) + 1); const k = Object.keys(c).length || 1; return arr.map(s => ({ ...s, w: arr.length / (k * c[s.label]) })); };
 for (const j of jobs) {
   let x;
   try { x = decode(j.file); } catch (e) { fail++; console.warn('Không đọc được', j.file); continue; }
@@ -84,7 +86,7 @@ const groups = [...new Set(samples.map(s => s.g))];
 let ok = 0, n = 0; const confusion = {};
 for (const g of groups) {
   const train = samples.filter(s => s.g !== g), test = samples.filter(s => s.g === g);
-  const m = core.buildModel(train); if (!m) continue;
+  const m = core.buildModel(balance(train)); if (!m) continue;
   for (const s of test) {
     const r = core.predict(m, s.vec); n++; if (r && r.label === s.label) ok++;
     const k = s.label + ' → ' + (r ? r.label : '—'); confusion[k] = (confusion[k] || 0) + 1;
@@ -96,7 +98,7 @@ const model = {
   note: 'CatMeows (Ludovico et al., 2020) chỉ được dùng cho nghiên cứu và mục đích phi thương mại, phải trích dẫn.',
   features: core.FEATURE_NAMES, counts, groups: groups.length,
   evaluation: n ? { method: 'leave-one-cat-out', accuracy: Math.round(100 * ok / n), tested: n } : null,
-  samples: samples.map(s => ({ vec: s.vec, label: s.label })),
+  samples: balance(samples).map(s => ({ vec: s.vec, label: s.label, w: +s.w.toFixed(3) })),
 };
 fs.writeFileSync(out, JSON.stringify(model));
 console.log(`Đã xử lý ${jobs.length - fail}/${jobs.length} file → ${samples.length} tiếng kêu, ${groups.length} nhóm mèo/clip.`);
