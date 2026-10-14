@@ -7,8 +7,15 @@ CREATE TABLE IF NOT EXISTS users (
   created_at    INTEGER NOT NULL,
   share_audio   INTEGER NOT NULL DEFAULT 0, -- 1 = consented to store raw audio in R2
   agent_day     TEXT,                       -- YYYY-MM-DD of last agent call (UTC)
-  agent_calls   INTEGER NOT NULL DEFAULT 0  -- agent calls on agent_day
+  agent_calls   INTEGER NOT NULL DEFAULT 0, -- agent calls on agent_day
+  consent_at    INTEGER,                    -- when the owner accepted the terms (NULL = not yet)
+  consent_version TEXT,                     -- which version of privacy.html they accepted
+  share_model   INTEGER NOT NULL DEFAULT 0  -- 1 = labelled measurements may improve the shared model
 );
+-- Migration for databases created before 2026-10-14:
+-- ALTER TABLE users ADD COLUMN consent_at INTEGER;
+-- ALTER TABLE users ADD COLUMN consent_version TEXT;
+-- ALTER TABLE users ADD COLUMN share_model INTEGER NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS cats (
   id          TEXT PRIMARY KEY,

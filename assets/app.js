@@ -68,8 +68,10 @@ function newToken(){const a=new Uint8Array(24);crypto.getRandomValues(a);return 
 
 let token=LS.get('token',null);if(!token){token=newToken();LS.set('token',token);}
 const D={cats:LS.get('cats',[]),active:LS.get('active',null),sounds:LS.get('sounds',{}),personality:LS.get('personality',{}),
-  persona:LS.get('persona','nung'),shareAudio:LS.get('shareAudio',false)};
-function save(){LS.set('cats',D.cats);LS.set('active',D.active);LS.set('sounds',D.sounds);LS.set('personality',D.personality);LS.set('persona',D.persona);LS.set('shareAudio',D.shareAudio);}
+  persona:LS.get('persona','nung'),shareAudio:LS.get('shareAudio',false),consent:LS.get('consent',null)};
+function save(){LS.set('cats',D.cats);LS.set('active',D.active);LS.set('sounds',D.sounds);LS.set('personality',D.personality);LS.set('persona',D.persona);LS.set('shareAudio',D.shareAudio);LS.set('consent',D.consent);}
+const CONSENT_V='2026-10-14';
+const consented=()=>D.consent&&D.consent.v===CONSENT_V;
 if(!D.cats.length){const c={id:rid(),name:'Mèo của tôi',sex:null,neutered:null,birth_year:null,breed:null,notes:null,synced:false};D.cats.push(c);D.active=c.id;save();}
 if(!D.cats.find(c=>c.id===D.active))D.active=D.cats[0].id;
 const cat=()=>D.cats.find(c=>c.id===D.active);
@@ -91,12 +93,13 @@ async function api(path,opts){
 }
 function setSync(s,t){const el=$('sync');el.dataset.s=s;el.querySelector('span').textContent=t;}
 async function syncAll(){
-  if(!API){setSync('off','Chỉ lưu trên máy');return;}
+  if(!API||!consented()){server={on:false,agent:false,audio:false};setSync('off','Chỉ lưu trên máy');renderSettings();return;}
   setSync('','Đang đồng bộ…');
   try{
     const h=await api('/api/health');server={on:true,agent:!!h.agent,audio:!!h.audio};
-    const me=await api('/api/me');
-    if(me.user)D.shareAudio=!!me.user.shareAudio;
+    let me=await api('/api/me');
+    if(!me.user.consent||me.user.consentVersion!==CONSENT_V){await api('/api/me',{method:'PATCH',body:{consent:true,consentVersion:CONSENT_V,shareModel:!!D.consent.shareModel}});me=await api('/api/me');}
+    if(me.user){D.shareAudio=!!me.user.shareAudio;D.consent.shareModel=!!me.user.shareModel;}
     const remote=me.cats||[];
     for(const rc of remote){if(!D.cats.find(c=>c.id===rc.id)){D.cats.push({...rc,synced:true});}}
     for(const c of D.cats){
@@ -444,8 +447,9 @@ async function renderChat(){
   const can=server.on&&server.agent;
   off.hidden=can;$('chatSend').disabled=!can;$('chatIn').disabled=!can;
   if(!can){off.textContent='';const b=document.createElement('b');
-    b.textContent=!API?'Chuyên gia cần kết nối máy chủ.':!server.on?'Chưa kết nối được máy chủ.':'Máy chủ chưa bật trợ lý.';
-    off.append(b,document.createTextNode(!API?' Bản hiện tại đang chạy ngoại tuyến: thu âm, gắn nhãn, học riêng từng bé và tính cách vẫn dùng được trên máy này.':' Thử tải lại trang sau ít phút.'));
+    const local=!API||!consented();
+    b.textContent=local?'Bạn đang dùng chế độ chỉ lưu trên máy.':!server.on?'Chưa kết nối được máy chủ.':'Máy chủ chưa bật trợ lý.';
+    off.append(b,document.createTextNode(local?' Thu âm, gắn nhãn, học riêng từng bé và tính cách vẫn dùng bình thường. Muốn hỏi chuyên gia, vào Cài đặt và bật đồng bộ.':' Thử tải lại trang sau ít phút.'));
     $('chatlog').textContent='';return;}
   if(chatLoaded===D.active)return;
   chatLoaded=D.active;$('chatlog').textContent='';
@@ -485,7 +489,18 @@ function renderLog(){
 function renderSettings(){
   $('tokenTxt').textContent=token;$('shareAudio').checked=!!D.shareAudio;
   $('shareAudio').disabled=!server.on;
+  const on=consented();
+  $('consentState').textContent=!API?'Bản này chưa nối máy chủ.':on?`Đang đồng bộ. Bạn đã đồng ý điều khoản phiên bản ${CONSENT_V}.`:'Đang ở chế độ chỉ lưu trên máy. Dữ liệu không rời khỏi trình duyệt này.';
+  $('shareModel').checked=!!(on&&D.consent.shareModel);$('shareModel').disabled=!on||!server.on;
+  $('openConsent').hidden=on||!API;
 }
+function openConsent(){$('c-agree').checked=false;$('c-model').checked=false;$('c-ok').disabled=true;$('consent').hidden=false;setTimeout(()=>$('c-agree').focus(),30);}
+$('c-agree').onchange=e=>{$('c-ok').disabled=!e.target.checked;};
+$('consentForm').addEventListener('submit',e=>{e.preventDefault();if(!$('c-agree').checked)return;
+  D.consent={v:CONSENT_V,at:Date.now(),shareModel:$('c-model').checked};save();$('consent').hidden=true;syncAll();});
+$('c-local').onclick=()=>{D.consent={v:'local',at:Date.now()};save();$('consent').hidden=true;syncAll();};
+$('openConsent').onclick=openConsent;
+$('shareModel').onchange=async e=>{if(!consented())return;D.consent.shareModel=e.target.checked;save();if(server.on){try{await api('/api/me',{method:'PATCH',body:{shareModel:D.consent.shareModel}});}catch(err){}}};
 $('copyToken').onclick=async()=>{try{await navigator.clipboard.writeText(token);$('copyToken').textContent='Đã sao chép';}catch(e){const r=document.createRange();r.selectNodeContents($('tokenTxt'));const s=getSelection();s.removeAllRanges();s.addRange(r);$('copyToken').textContent='Đã chọn, bấm Ctrl+C';}setTimeout(()=>$('copyToken').textContent='Sao chép mã',2500);};
 $('useToken').onclick=()=>openDlg('token');
 $('shareAudio').onchange=async e=>{D.shareAudio=e.target.checked;save();if(server.on){try{await api('/api/me',{method:'PATCH',body:{shareAudio:D.shareAudio}});}catch(err){}}};
@@ -515,5 +530,6 @@ renderAll();liveDraw();
 let startTab='analysis';try{const h=(location.hash||'').slice(1);const st=sessionStorage.getItem('meongu.tab');if(TABS.includes(h))startTab=h;else if(TABS.includes(st))startTab=st;}catch(e){}
 selectTab(startTab);
 const ex=synthFromText('meooooo?',4242);runAnalysis(ex.samples,ex.sampleRate,'Ví dụ: meooooo?');
+if(API&&(!D.consent||(D.consent.v!=='local'&&D.consent.v!==CONSENT_V)))openConsent();
 syncAll();
 })();

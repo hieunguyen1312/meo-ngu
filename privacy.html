@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Điều khoản & Quyền riêng tư · Mèo Ngữ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="assets/style.css?v=4">
+<style>
+.doc{max-width:720px;margin:0 auto;display:grid;gap:22px}
+.doc h1{font:800 clamp(30px,5vw,42px)/1.1 var(--f-display);margin:0;letter-spacing:-0.02em}
+.doc h2{font:700 20px/1.3 var(--f-display);margin:0}
+.doc section{display:grid;gap:8px}
+.doc p,.doc li{margin:0;max-width:68ch}
+.doc ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.doc .meta{font:500 13px/1.4 var(--f-mono);color:var(--muted)}
+.doc .box{background:var(--teal-soft);border-radius:12px;padding:14px 16px;display:grid;gap:6px}
+.doc .warn{background:var(--ginger-soft)}
+.doc a{color:var(--teal)}
+</style>
+</head>
+<body>
+<main class="doc">
+  <a href="./" class="meta">← Về Mèo Ngữ</a>
+  <h1>Điều khoản & Quyền riêng tư</h1>
+  <p class="meta">Phiên bản 2026-10-14</p>
+
+  <div class="box">
+    <b>Tóm tắt</b>
+    <ul>
+      <li>Không cần tài khoản. App không hỏi tên, email, số điện thoại hay vị trí của bạn.</li>
+      <li>Mặc định app chỉ gửi <b>các con số đo được</b> từ tiếng mèo (cao độ, độ dài…), không gửi âm thanh.</li>
+      <li>Câu hỏi bạn gửi cho chuyên gia AI được xử lý bởi nhà cung cấp AI bên thứ ba, ở ngoài Việt Nam.</li>
+      <li>Bạn xem và xoá toàn bộ dữ liệu của mình bất cứ lúc nào trong mục Cài đặt.</li>
+      <li>Mèo Ngữ không thay thế bác sĩ thú y.</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>1. Dữ liệu app lưu</h2>
+    <ul>
+      <li><b>Mã thiết bị.</b> Máy bạn tạo một mã ngẫu nhiên. Máy chủ chỉ lưu bản băm (SHA-256) của mã, không lưu mã gốc.</li>
+      <li><b>Hồ sơ mèo</b> bạn nhập: tên, giới tính, triệt sản, năm sinh, giống, ghi chú.</li>
+      <li><b>Số đo tiếng kêu</b>: khoảng 12 con số mô tả mỗi lần thu, kèm ngữ cảnh app đoán, nhãn bạn chọn và kết quả sau khi bạn đáp lại.</li>
+      <li><b>Kết quả bộ câu hỏi tính cách</b> và <b>ghi chép hành vi</b> (do bạn nhập hoặc chuyên gia AI ghi lại từ lời kể của bạn).</li>
+      <li><b>Nội dung trò chuyện</b> với chuyên gia AI.</li>
+      <li><b>Bản ghi âm gốc</b>: chỉ khi bạn tự bật "Chia sẻ bản ghi âm" trong Cài đặt. Bản ghi có thể lẫn giọng người trong nhà.</li>
+    </ul>
+    <p>Nếu bạn chọn "Chỉ dùng trên máy này", mọi thứ chỉ nằm trong trình duyệt của bạn và không gửi đi đâu.</p>
+  </section>
+
+  <section>
+    <h2>2. Dùng dữ liệu để làm gì</h2>
+    <ul>
+      <li>Đồng bộ dữ liệu giữa các máy của bạn và học riêng cách kêu của từng bé.</li>
+      <li>Cho chuyên gia AI đọc hồ sơ, thống kê và ghi chép của bé để trả lời bạn.</li>
+      <li><b>Chỉ khi bạn đồng ý riêng</b>: dùng các số đo và nhãn ngữ cảnh (không kèm ghi chú, trò chuyện hay âm thanh) để cải thiện mô hình chung cho mọi người dùng. Bạn bật hoặc tắt việc này trong Cài đặt.</li>
+    </ul>
+    <p>Mèo Ngữ không bán dữ liệu và không dùng dữ liệu để quảng cáo.</p>
+  </section>
+
+  <section>
+    <h2>3. Bên xử lý dữ liệu</h2>
+    <ul>
+      <li><b>Cloudflare</b>: lưu trữ dữ liệu (D1, R2) và chạy mô hình AI Workers AI.</li>
+      <li><b>Google (Gemini API)</b>, khi được bật làm chuyên gia AI. Ở gói miễn phí, Google có thể dùng nội dung gửi đến và câu trả lời để cải thiện sản phẩm của họ, và người duyệt của Google có thể đọc nội dung đó.</li>
+      <li><b>Anthropic (Claude)</b>, nếu được bật làm tầng dự phòng.</li>
+    </ul>
+    <div class="box warn"><b>Đừng gửi thông tin cá nhân nhạy cảm vào khung trò chuyện</b> (họ tên đầy đủ, địa chỉ, số điện thoại, thông tin sức khoẻ của người). Chỉ cần kể về bé mèo.</div>
+  </section>
+
+  <section>
+    <h2>4. Quyền của bạn</h2>
+    <ul>
+      <li><b>Xem dữ liệu</b>: Cài đặt → "Xem dữ liệu dạng JSON".</li>
+      <li><b>Xoá</b>: xoá từng bé, hoặc "Xoá toàn bộ dữ liệu" để xoá ngay mọi thứ của mã thiết bị này trên máy chủ.</li>
+      <li><b>Rút lại đồng ý</b>: tắt "Cải thiện mô hình chung" hoặc "Chia sẻ bản ghi âm" trong Cài đặt.</li>
+      <li>Dữ liệu được giữ đến khi bạn xoá.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. Ai được dùng</h2>
+    <ul>
+      <li>Người dùng từ <b>18 tuổi</b> trở lên.</li>
+      <li>Với người dùng ở Liên minh châu Âu, Anh và Thuỵ Sĩ, app không dùng gói AI miễn phí của Google.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. Giới hạn của app</h2>
+    <p>Bản dịch tiếng mèo, nhận xét tính cách và lời khuyên của chuyên gia AI chỉ để tham khảo, có thể sai. App không chẩn đoán bệnh. Nếu bé bỏ ăn, rặn tiểu không ra, khó thở, nôn nhiều, hoặc kêu bất thường kéo dài, hãy đưa bé đi thú y ngay.</p>
+  </section>
+
+  <section>
+    <h2>7. Thay đổi</h2>
+    <p>Khi điều khoản thay đổi, app sẽ hỏi lại bạn trước khi tiếp tục đồng bộ.</p>
+  </section>
+
+  <section>
+    <h2>8. Liên hệ</h2>
+    <p>Góp ý hoặc yêu cầu về dữ liệu: <a href="https://github.com/hieunguyen1312/meo-ngu/issues" rel="noopener">github.com/hieunguyen1312/meo-ngu/issues</a>. Đừng đăng mã thiết bị của bạn ở đó.</p>
+  </section>
+</main>
+</body>
+</html>

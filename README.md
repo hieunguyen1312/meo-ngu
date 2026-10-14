@@ -38,6 +38,9 @@ Không có "ngôn ngữ mèo" chung: mèo trưởng thành kêu meo chủ yếu 
 
 ## Quyền riêng tư
 
+Chi tiết cho người dùng: [privacy.html](privacy.html). Lần đầu mở app, người dùng phải xác nhận từ 18 tuổi và đồng ý điều khoản thì mới đồng bộ; nếu không, app chạy ở chế độ chỉ lưu trên máy. Máy chủ từ chối mọi thao tác ghi dữ liệu khi chưa có đồng ý (`consent_required`). Việc dùng dữ liệu để cải thiện mô hình chung là đồng ý riêng (`share_model`), mặc định tắt. Người dùng ở EU/UK/Thuỵ Sĩ không được chuyển tới gói Gemini miễn phí.
+
+
 - Không cần tài khoản: mỗi thiết bị có một mã ngẫu nhiên; máy chủ chỉ lưu bản băm SHA-256 của mã.
 - Mặc định chỉ gửi các con số đo được, **không gửi âm thanh**. Gửi bản ghi gốc là tuỳ chọn, phải bật trong Cài đặt.
 - Người dùng xem và xoá toàn bộ dữ liệu của mình ngay trong app (`DELETE /api/me`).

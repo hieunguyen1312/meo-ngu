@@ -164,6 +164,12 @@
         <div class="actions"><button class="btn" id="editCat" type="button">Sửa thông tin bé</button><button class="btn danger" id="delCat" type="button">Xoá bé và dữ liệu của bé</button></div>
       </section>
       <section>
+        <h3>Đồng bộ & điều khoản</h3>
+        <p id="consentState">—</p>
+        <label class="check"><input type="checkbox" id="shareModel"> <span>Cho phép dùng số đo và nhãn ngữ cảnh của bé để cải thiện mô hình chung.</span></label>
+        <div class="actions"><button class="btn" id="openConsent" type="button">Bật đồng bộ</button><a class="btn" href="privacy.html" target="_blank" rel="noopener">Đọc điều khoản</a></div>
+      </section>
+      <section>
         <h3>Mã thiết bị</h3>
         <p>Dữ liệu trên máy chủ gắn với mã này, không cần tài khoản. Lưu mã lại để mở dữ liệu trên máy khác. Ai có mã này sẽ xem được dữ liệu mèo của bạn.</p>
         <div class="token" id="tokenTxt">—</div>
@@ -181,7 +187,7 @@
     </div>
   </section>
 
-  <footer>Mèo Ngữ học riêng từng con mèo từ những lần bạn gắn nhãn. Kết quả dịch và lời khuyên chỉ để tham khảo, không thay thế bác sĩ thú y. Nếu bé kêu bất thường kéo dài, bỏ ăn, hoặc rặn tiểu không ra, hãy đưa bé đi khám ngay.</footer>
+  <footer>Mèo Ngữ học riêng từng con mèo từ những lần bạn gắn nhãn. Kết quả dịch và lời khuyên chỉ để tham khảo, không thay thế bác sĩ thú y. Nếu bé kêu bất thường kéo dài, bỏ ăn, hoặc rặn tiểu không ra, hãy đưa bé đi khám ngay. <a href="privacy.html" style="color:var(--teal)">Điều khoản & Quyền riêng tư</a>.</footer>
 </div>
 
 <div class="dialog-bg" id="dlg" hidden>
@@ -203,8 +209,18 @@
   </form>
 </div>
 
-<script src="assets/config.js?v=3"></script>
-<script src="assets/core.js?v=3"></script>
-<script src="assets/app.js?v=3"></script>
+<div class="dialog-bg" id="consent" hidden>
+  <form class="dialog" id="consentForm" aria-labelledby="consentTitle">
+    <h3 id="consentTitle">Trước khi đồng bộ</h3>
+    <p class="empty">Để lưu dữ liệu lên máy chủ và hỏi chuyên gia AI, Mèo Ngữ cần bạn đồng ý với cách app xử lý dữ liệu. Câu hỏi bạn gửi chuyên gia được xử lý bởi Cloudflare hoặc Google Gemini, ở ngoài Việt Nam.</p>
+    <label class="check"><input type="checkbox" id="c-agree"> <span>Tôi từ 18 tuổi trở lên và đồng ý với <a href="privacy.html" target="_blank" rel="noopener">Điều khoản & Quyền riêng tư</a>.</span></label>
+    <label class="check"><input type="checkbox" id="c-model"> <span>Cho phép dùng các số đo và nhãn ngữ cảnh của bé (không gồm âm thanh, ghi chú hay trò chuyện) để cải thiện mô hình chung. Không bắt buộc.</span></label>
+    <div class="actions"><button class="btn primary" type="submit" id="c-ok" disabled>Đồng ý và bật đồng bộ</button><button class="btn" type="button" id="c-local">Chỉ dùng trên máy này</button></div>
+  </form>
+</div>
+
+<script src="assets/config.js?v=4"></script>
+<script src="assets/core.js?v=4"></script>
+<script src="assets/app.js?v=4"></script>
 </body>
 </html>

@@ -89,10 +89,15 @@ async function route(req, env, ctx) {
 
   if (p === '/api/me' && M === 'GET') {
     const cats = await env.DB.prepare('SELECT * FROM cats WHERE user_id = ? ORDER BY created_at').bind(user.id).all();
-    return json({ user: { shareAudio: !!user.share_audio, agentCallsToday: user.agent_day === today() ? user.agent_calls : 0, agentDailyLimit: limit(env) }, cats: cats.results });
+    return json({ user: { consent: !!user.consent_at, consentVersion: user.consent_version || null, shareModel: !!user.share_model, shareAudio: !!user.share_audio, agentCallsToday: user.agent_day === today() ? user.agent_calls : 0, agentDailyLimit: limit(env) }, cats: cats.results });
   }
   if (p === '/api/me' && M === 'PATCH') {
     const b = await readJson(req);
+    if (b.consent === true) {
+      const v = str(b.consentVersion, 20, 'Phiên bản điều khoản') || 'unknown';
+      await env.DB.prepare('UPDATE users SET consent_at = ?, consent_version = ? WHERE id = ?').bind(now(), v, user.id).run();
+    }
+    if (typeof b.shareModel === 'boolean') await env.DB.prepare('UPDATE users SET share_model = ? WHERE id = ?').bind(b.shareModel ? 1 : 0, user.id).run();
     if (typeof b.shareAudio === 'boolean') await env.DB.prepare('UPDATE users SET share_audio = ? WHERE id = ?').bind(b.shareAudio ? 1 : 0, user.id).run();
     return json({ ok: true });
   }
@@ -112,6 +117,9 @@ async function route(req, env, ctx) {
     ]);
     return json({ ok: true });
   }
+
+  // Everything below stores or processes the owner's data: require accepted terms first.
+  if (!user.consent_at) throw new HttpError(403, 'consent_required', 'Bạn cần đồng ý Điều khoản và Quyền riêng tư để đồng bộ dữ liệu.');
 
   if (p === '/api/cats' && M === 'POST') {
     const b = await readJson(req);
@@ -342,8 +350,11 @@ async function runTool(env, user, cat, name, input) {
 class ProviderError extends Error { constructor(provider, status, detail) { super(`${provider} ${status}`); this.provider = provider; this.status = status; this.detail = detail; } }
 const toOpenAITools = () => TOOLS.map(t => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.input_schema } }));
 
-function providerChain(env) {
-  const want = (env.AGENT_PROVIDERS || 'gemini,workersai,anthropic').split(',').map(s => s.trim());
+// Gemini's unpaid tier may not serve users in the EEA, UK or Switzerland.
+const NO_FREE_GEMINI = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB','CH']);
+function providerChain(env, country) {
+  let want = (env.AGENT_PROVIDERS || 'gemini,workersai,anthropic').split(',').map(s => s.trim());
+  if (country && NO_FREE_GEMINI.has(country) && env.GEMINI_PAID !== 'true') want = want.filter(p => p !== 'gemini');
   const ok = { gemini: !!env.GEMINI_API_KEY, workersai: !!env.AI, anthropic: !!env.ANTHROPIC_API_KEY };
   return want.filter(p => ok[p]);
 }
@@ -412,7 +423,7 @@ async function loopAnthropic(env, user, cat, system, history, userContent, saved
 }
 
 async function agent(req, env, user) {
-  const chain = providerChain(env);
+  const chain = providerChain(env, req.cf && req.cf.country);
   if (!chain.length) throw new HttpError(503, 'agent_off', 'Máy chủ chưa cấu hình trợ lý.');
   const b = await readJson(req);
   const cat = await ownCat(env, user, String(b.catId || ''));

@@ -184,3 +184,4 @@ footer{color:var(--muted);font-size:13px;max-width:70ch}
 .upload{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--muted)}
 .h2{font:700 20px/1.2 var(--f-display);margin:0}
 @media (max-width:420px){.scale button{width:34px;height:34px}}
+.dialog a{color:var(--teal)}
