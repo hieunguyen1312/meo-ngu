@@ -4,6 +4,21 @@
 
 Bản chạy: https://hieunguyen1312.github.io/meo-ngu/
 
+## Cài như app (PWA)
+
+Mở link trên điện thoại:
+- **Android (Chrome):** bấm "Cài app" trên thanh gợi ý, hoặc menu ⋮ → "Cài đặt ứng dụng".
+- **iPhone (Safari):** nút Chia sẻ → "Thêm vào MH chính". Thông báo trên iPhone chỉ chạy khi mở app từ icon này (iOS 16.4 trở lên).
+
+App dùng được khi mất mạng (thu âm, gắn nhãn, mô hình riêng). Đồng bộ và chuyên gia cần mạng.
+
+## Nhắc gắn nhãn
+
+Mô hình riêng của bé chỉ học khi chủ gắn nhãn, nên app giảm công gắn nhãn bằng 3 cách:
+1. **Một chạm:** sau khi thu, app hỏi "App đoán bé đang: Đói. Đúng không?".
+2. **Chờ gắn nhãn:** tab Nhật ký liệt kê các tiếng kêu 3 ngày gần nhất chưa có nhãn, chọn bằng một chạm.
+3. **Thông báo:** bật trong Cài đặt; 5 phút sau mỗi lần thu, nếu chưa gắn nhãn, máy chủ gửi Web Push (VAPID + mã hoá aes128gcm, cron mỗi phút). Chạm vào thông báo mở đúng tiếng kêu đó.
+
 ## Cách app "học"
 
 ```

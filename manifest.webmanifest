@@ -1,0 +1,23 @@
+{
+  "name": "Mèo Ngữ",
+  "short_name": "Mèo Ngữ",
+  "description": "Thu tiếng mèo, hiểu ý bé, học riêng từng con và hỏi chuyên gia hành vi.",
+  "lang": "vi",
+  "id": "./",
+  "start_url": "./?source=app",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111518",
+  "theme_color": "#C8651A",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Thu tiếng mèo", "url": "./?source=shortcut&rec=1", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Hỏi chuyên gia", "url": "./?source=shortcut#chat", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

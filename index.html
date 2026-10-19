@@ -5,11 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Mèo Ngữ</title>
 <meta name="description" content="Thu tiếng mèo, hiểu ý bé, học riêng từng con mèo và hỏi chuyên gia hành vi.">
-<meta name="theme-color" content="#111518">
+<meta name="theme-color" content="#C8651A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mèo Ngữ">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=2">
+<link rel="stylesheet" href="assets/style.css?v=6">
 </head>
 <body>
 <div class="wrap">
@@ -27,6 +34,13 @@
       <span class="sync" id="sync" data-s="off"><i></i><span>Chỉ lưu trên máy</span></span>
     </div>
   </header>
+
+  <div class="installbar" id="installBar" hidden>
+    <img src="icons/icon-192.png" alt="" width="40" height="40">
+    <div class="ib-text"><b>Cài Mèo Ngữ lên điện thoại</b><span id="ibHint">Có icon riêng, mở nhanh để thu âm, dùng được khi mất mạng.</span></div>
+    <button class="btn sm primary" id="ibInstall" type="button">Cài app</button>
+    <button class="ib-close" id="ibClose" type="button" aria-label="Đóng">×</button>
+  </div>
 
   <section class="bench">
     <div class="panel" aria-labelledby="rec-title">
@@ -78,6 +92,15 @@
 
       <div class="labeler" id="labeler" hidden>
         <h3>Dạy app hiểu <span class="catname"></span></h3>
+        <div class="quick" id="quick">
+          <p id="quickQ">—</p>
+          <div class="actions">
+            <button class="btn primary" id="qYes" type="button">Đúng</button>
+            <button class="btn" id="qNo" type="button">Không phải</button>
+            <button class="btn" id="qLater" type="button">Nhắc tôi sau 5 phút</button>
+          </div>
+          <span class="saved-note" id="quickNote" hidden></span>
+        </div>
         <p>Lúc bé kêu, chuyện gì đang diễn ra?</p>
         <div class="chips" id="ctxChips"></div>
         <p>Bạn đáp lại xong, bé thế nào?</p>
@@ -97,7 +120,7 @@
       <button role="tab" id="tab-brain" aria-controls="p-brain" aria-selected="false">Bộ não của bé</button>
       <button role="tab" id="tab-persona" aria-controls="p-persona" aria-selected="false">Tính cách</button>
       <button role="tab" id="tab-chat" aria-controls="p-chat" aria-selected="false">Hỏi chuyên gia</button>
-      <button role="tab" id="tab-log" aria-controls="p-log" aria-selected="false">Nhật ký</button>
+      <button role="tab" id="tab-log" aria-controls="p-log" aria-selected="false">Nhật ký <span class="badge" id="logBadge" hidden></span></button>
       <button role="tab" id="tab-settings" aria-controls="p-settings" aria-selected="false">Cài đặt</button>
     </div>
 
@@ -153,6 +176,11 @@
     </div>
 
     <div class="tabpanel history" role="tabpanel" id="p-log" aria-labelledby="tab-log" hidden>
+      <section class="pending" id="pending" hidden>
+        <h3>Chờ gắn nhãn <span class="count" id="pendCount"></span></h3>
+        <p class="empty">Chọn lúc đó bé đang làm gì. Mỗi lần chọn là app hiểu bé thêm một chút.</p>
+        <ol id="pendList"></ol>
+      </section>
       <h2>Nhật ký của <span class="catname"></span></h2>
       <p class="empty" id="hEmpty">Chưa có lần thu nào.</p>
       <ol id="hList"></ol>
@@ -168,6 +196,12 @@
         <p id="consentState">—</p>
         <label class="check"><input type="checkbox" id="shareModel"> <span>Cho phép dùng số đo và nhãn ngữ cảnh của bé để cải thiện mô hình chung.</span></label>
         <div class="actions"><button class="btn" id="openConsent" type="button">Bật đồng bộ</button><a class="btn" href="privacy.html" target="_blank" rel="noopener">Đọc điều khoản</a></div>
+      </section>
+      <section>
+        <h3>Thông báo nhắc gắn nhãn</h3>
+        <p id="pushState">—</p>
+        <label class="check"><input type="checkbox" id="pushAuto"> <span>Nhắc tôi 5 phút sau mỗi lần thu nếu tôi chưa gắn nhãn.</span></label>
+        <div class="actions"><button class="btn" id="pushTest" type="button" hidden>Gửi thử một thông báo sau 1 phút</button></div>
       </section>
       <section>
         <h3>Mã thiết bị</h3>
@@ -219,8 +253,8 @@
   </form>
 </div>
 
-<script src="assets/config.js?v=5"></script>
-<script src="assets/core.js?v=5"></script>
-<script src="assets/app.js?v=5"></script>
+<script src="assets/config.js?v=6"></script>
+<script src="assets/core.js?v=6"></script>
+<script src="assets/app.js?v=6"></script>
 </body>
 </html>

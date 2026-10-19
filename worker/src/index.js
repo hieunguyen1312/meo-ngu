@@ -1,5 +1,6 @@
 // Mèo Ngữ API — Cloudflare Worker + D1 (+ optional R2) + Claude agent.
 import { CONTEXTS, OUTCOMES, FELINE_FIVE, KNOWLEDGE } from './knowledge.js';
+import { generateVapidKeys, sendPush } from './webpush.js';
 
 const MAX_BODY = 64 * 1024;
 const MAX_AUDIO = 2 * 1024 * 1024;
@@ -17,6 +18,10 @@ export default {
       if (status >= 500) console.error(e && e.stack || e);
       return json({ error: e.code || 'server_error', message: status >= 500 ? 'Máy chủ gặp lỗi, thử lại sau.' : e.message }, status, cors);
     }
+  },
+  // Cron (every minute): send due "label this meow" reminders.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runReminders(env));
   },
 };
 
@@ -84,6 +89,7 @@ async function route(req, env, ctx) {
   if (p === '/api/health') return json({ ok: true, agent: providerChain(env).length > 0, providers: providerChain(env), audio: !!env.AUDIO });
   if (p === '/api/meta') return json({ contexts: CONTEXTS, outcomes: OUTCOMES, felineFive: FELINE_FIVE });
 
+  await ensurePushSchema(env);
   const user = await auth(req, env);
   let m;
 
@@ -113,6 +119,8 @@ async function route(req, env, ctx) {
       env.DB.prepare('DELETE FROM sounds WHERE user_id = ?').bind(user.id),
       env.DB.prepare('DELETE FROM personality WHERE cat_id IN (SELECT id FROM cats WHERE user_id = ?)').bind(user.id),
       env.DB.prepare('DELETE FROM cats WHERE user_id = ?').bind(user.id),
+      env.DB.prepare('DELETE FROM reminders WHERE user_id = ?').bind(user.id),
+      env.DB.prepare('DELETE FROM push_subs WHERE user_id = ?').bind(user.id),
       env.DB.prepare('DELETE FROM users WHERE id = ?').bind(user.id),
     ]);
     return json({ ok: true });
@@ -148,6 +156,7 @@ async function route(req, env, ctx) {
         env.DB.prepare('DELETE FROM observations WHERE cat_id = ?').bind(cat.id),
         env.DB.prepare('DELETE FROM sounds WHERE cat_id = ?').bind(cat.id),
         env.DB.prepare('DELETE FROM personality WHERE cat_id = ?').bind(cat.id),
+        env.DB.prepare('DELETE FROM reminders WHERE cat_id = ?').bind(cat.id),
         env.DB.prepare('DELETE FROM cats WHERE id = ?').bind(cat.id),
       ]);
       return json({ ok: true });
@@ -242,6 +251,38 @@ async function route(req, env, ctx) {
   }
 
   if (p === '/api/agent' && M === 'POST') return agent(req, env, user);
+
+  // ---- push notifications ----
+  if (p === '/api/push/key' && M === 'GET') return json({ publicKey: (await getVapid(env)).publicKey });
+  if (p === '/api/push/subscribe' && (M === 'POST' || M === 'DELETE')) {
+    const b = await readJson(req);
+    const endpoint = typeof b.endpoint === 'string' ? b.endpoint : '';
+    if (!/^https:\/\/[^\s]{10,900}$/.test(endpoint)) throw bad('Địa chỉ nhận thông báo không hợp lệ.');
+    if (M === 'DELETE') {
+      await env.DB.prepare('DELETE FROM push_subs WHERE endpoint = ? AND user_id = ?').bind(endpoint, user.id).run();
+      return json({ ok: true });
+    }
+    const k = b.keys || {};
+    if (!/^[\w-]{80,100}$/.test(k.p256dh || '') || !/^[\w-]{16,32}$/.test(k.auth || '')) throw bad('Khoá nhận thông báo không hợp lệ.');
+    const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM push_subs WHERE user_id = ?').bind(user.id).first();
+    if (n.n >= 10) await env.DB.prepare('DELETE FROM push_subs WHERE user_id = ? AND endpoint IN (SELECT endpoint FROM push_subs WHERE user_id = ? ORDER BY created_at LIMIT 1)').bind(user.id, user.id).run();
+    await env.DB.prepare(`INSERT INTO push_subs (endpoint, user_id, p256dh, auth, created_at) VALUES (?,?,?,?,?)
+      ON CONFLICT(endpoint) DO UPDATE SET user_id=excluded.user_id, p256dh=excluded.p256dh, auth=excluded.auth`)
+      .bind(endpoint, user.id, k.p256dh, k.auth, now()).run();
+    return json({ ok: true }, 201);
+  }
+  if (p === '/api/reminders' && M === 'POST') {
+    const b = await readJson(req);
+    const s = await env.DB.prepare('SELECT id, cat_id, label FROM sounds WHERE id = ? AND user_id = ?').bind(String(b.soundId || ''), user.id).first();
+    if (!s) throw new HttpError(404, 'not_found', 'Không tìm thấy bản ghi.');
+    if (s.label) return json({ ok: true, skipped: 'already_labeled' });
+    const delay = clampInt(b.delayMin, 1, 180) || 5;
+    const pending = await env.DB.prepare('SELECT COUNT(*) AS n FROM reminders WHERE user_id = ? AND sent_at IS NULL').bind(user.id).first();
+    if (pending.n >= 20) throw new HttpError(429, 'too_many', 'Bạn đang có quá nhiều lời nhắc chờ gửi.');
+    await env.DB.prepare('INSERT OR REPLACE INTO reminders (id, user_id, cat_id, sound_id, due_at, sent_at) VALUES (?,?,?,?,?,NULL)')
+      .bind('rem-' + s.id, user.id, s.cat_id, s.id, now() + delay * 60000).run();
+    return json({ ok: true, dueInMin: delay }, 201);
+  }
 
   throw new HttpError(404, 'not_found', 'Không có đường dẫn này.');
 }
@@ -467,4 +508,62 @@ async function agent(req, env, user) {
     env.DB.prepare('INSERT INTO messages (id,cat_id,user_id,role,content,created_at) VALUES (?,?,?,?,?,?)').bind(uid(), cat.id, user.id, 'assistant', reply, t + 1),
   ]);
   return json({ reply, provider: used, savedObservations: saved, callsLeft: Math.max(0, limit(env) - calls - 1) });
+}
+
+
+// ---------- reminders ----------
+// The push tables are created by the Worker itself (idempotent, once per isolate),
+// so a deploy never depends on a manual migration.
+let pushSchema = null;
+function ensurePushSchema(env) {
+  if (!pushSchema) pushSchema = env.DB.batch([
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS app_keys (name TEXT PRIMARY KEY, value TEXT NOT NULL)'),
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS push_subs (endpoint TEXT PRIMARY KEY, user_id TEXT NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, created_at INTEGER NOT NULL)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_push_user ON push_subs(user_id)'),
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS reminders (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, cat_id TEXT NOT NULL, sound_id TEXT NOT NULL, due_at INTEGER NOT NULL, sent_at INTEGER)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_rem_due ON reminders(sent_at, due_at)'),
+  ]).catch(e => { pushSchema = null; throw e; });
+  return pushSchema;
+}
+async function getVapid(env) {
+  let row = await env.DB.prepare("SELECT value FROM app_keys WHERE name = 'vapid'").first();
+  if (!row) {
+    const k = await generateVapidKeys();
+    await env.DB.prepare("INSERT OR IGNORE INTO app_keys (name, value) VALUES ('vapid', ?)").bind(JSON.stringify(k)).run();
+    row = await env.DB.prepare("SELECT value FROM app_keys WHERE name = 'vapid'").first();
+  }
+  return JSON.parse(row.value);
+}
+
+async function runReminders(env) {
+  await ensurePushSchema(env);
+  const t = now();
+  const due = (await env.DB.prepare(`SELECT r.id, r.user_id, r.cat_id, r.sound_id, s.label, s.created_at AS rec_at, c.name AS cat_name
+      FROM reminders r JOIN sounds s ON s.id = r.sound_id JOIN cats c ON c.id = r.cat_id
+      WHERE r.sent_at IS NULL AND r.due_at <= ? ORDER BY r.due_at LIMIT 50`).bind(t).all()).results;
+  if (!due.length) {
+    await env.DB.prepare('DELETE FROM reminders WHERE sent_at IS NOT NULL AND sent_at < ?').bind(t - 2 * 864e5).run();
+    return;
+  }
+  const vapid = await getVapid(env);
+  const subject = env.VAPID_SUBJECT || 'https://hieunguyen1312.github.io/meo-ngu/';
+  for (const r of due) {
+    await env.DB.prepare('UPDATE reminders SET sent_at = ? WHERE id = ?').bind(t, r.id).run();
+    if (r.label) continue; // the owner labelled it in the meantime
+    const subs = (await env.DB.prepare('SELECT * FROM push_subs WHERE user_id = ?').bind(r.user_id).all()).results;
+    const hhmm = new Date(r.rec_at + 7 * 36e5).toISOString().slice(11, 16);
+    const payload = JSON.stringify({
+      title: `Bé ${r.cat_name} muốn gì vậy?`,
+      body: `Lúc ${hhmm} bé kêu. Chạm để chọn lúc đó bé đang làm gì, app sẽ hiểu bé hơn.`,
+      url: `./?label=${encodeURIComponent(r.sound_id)}&cat=${encodeURIComponent(r.cat_id)}`,
+      tag: r.sound_id,
+    });
+    for (const sub of subs) {
+      try {
+        const status = await sendPush({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload, vapid, subject);
+        if (status === 404 || status === 410) await env.DB.prepare('DELETE FROM push_subs WHERE endpoint = ?').bind(sub.endpoint).run();
+        else if (status >= 300) console.warn('push failed', status, new URL(sub.endpoint).host);
+      } catch (e) { console.warn('push error', e && e.message); }
+    }
+  }
 }

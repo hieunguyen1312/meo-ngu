@@ -185,3 +185,20 @@ footer{color:var(--muted);font-size:13px;max-width:70ch}
 .h2{font:700 20px/1.2 var(--f-display);margin:0}
 @media (max-width:420px){.scale button{width:34px;height:34px}}
 .dialog a{color:var(--teal)}
+
+/* ===== v3: app install, quick label, pending ===== */
+.installbar{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.installbar img{border-radius:10px;flex:none}
+.ib-text{display:grid;flex:1;min-width:0;font-size:14px}.ib-text span{color:var(--muted)}
+.ib-close{border:0;background:transparent;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;padding:4px 6px}
+.quick{display:grid;gap:8px;background:var(--ginger-soft);border-radius:12px;padding:12px 14px}
+.quick p{margin:0;font-size:15px;color:var(--ink)}
+.badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ginger);color:#fff;font:600 12px/1 var(--f-mono);margin-left:4px}
+.pending{display:grid;gap:10px;background:var(--ginger-soft);border-radius:12px;padding:14px}
+.pending h3{margin:0;font:700 17px/1.3 var(--f-display)}
+.pending ol{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.pending li{display:grid;gap:8px;background:var(--surface);border-radius:10px;padding:10px 12px;border:2px solid transparent}
+.pending li.hl{border-color:var(--ginger)}
+.pending .p-top{display:flex;justify-content:space-between;gap:10px;font-size:14px;flex-wrap:wrap}
+.pending .p-top span{color:var(--muted)}
+.pending .chips{gap:6px}

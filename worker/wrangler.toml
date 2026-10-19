@@ -27,5 +27,8 @@ database_id = "fb149aa9-5852-4252-99dd-4f4cda2465bf"
 # binding = "AUDIO"
 # bucket_name = "meo-ngu-audio"
 
+[triggers]
+crons = ["* * * * *"]   # send due label reminders
+
 [observability]
 enabled = true

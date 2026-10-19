@@ -68,9 +68,9 @@ function newToken(){const a=new Uint8Array(24);crypto.getRandomValues(a);return 
 
 let token=LS.get('token',null);if(!token){token=newToken();LS.set('token',token);}
 const D={cats:LS.get('cats',[]),active:LS.get('active',null),sounds:LS.get('sounds',{}),personality:LS.get('personality',{}),
-  persona:LS.get('persona','nung'),shareAudio:LS.get('shareAudio',false),consent:LS.get('consent',null)};
-function save(){LS.set('cats',D.cats);LS.set('active',D.active);LS.set('sounds',D.sounds);LS.set('personality',D.personality);LS.set('persona',D.persona);LS.set('shareAudio',D.shareAudio);LS.set('consent',D.consent);}
-const CONSENT_V='2026-10-14';
+  persona:LS.get('persona','nung'),shareAudio:LS.get('shareAudio',false),consent:LS.get('consent',null),pushAuto:LS.get('pushAuto',false),pushSub:LS.get('pushSub',false)};
+function save(){LS.set('cats',D.cats);LS.set('active',D.active);LS.set('sounds',D.sounds);LS.set('personality',D.personality);LS.set('persona',D.persona);LS.set('shareAudio',D.shareAudio);LS.set('consent',D.consent);LS.set('pushAuto',D.pushAuto);LS.set('pushSub',D.pushSub);}
+const CONSENT_V='2026-10-19';
 const consented=()=>D.consent&&D.consent.v===CONSENT_V;
 if(!D.cats.length){const c={id:rid(),name:'Mèo của tôi',sex:null,neutered:null,birth_year:null,breed:null,notes:null,synced:false};D.cats.push(c);D.active=c.id;save();}
 if(!D.cats.find(c=>c.id===D.active))D.active=D.cats[0].id;
@@ -159,7 +159,8 @@ function runAnalysis(samples,sr,srcLabel,opts){
   S.idx=Math.floor(Math.random()*4);S.labelable=!!opts.source&&!!S.pred.label;S.soundId=null;S.ctx=S.pred.label;S.out=null;
   if(S.labelable){
     const s={id:rid(),createdAt:Date.now(),source:opts.source,duration:+F.totalDur.toFixed(2),features:sum,predicted:S.pred.label,confidence:S.pred.conf,label:null,outcome:null,synced:false};
-    soundsOf(D.active).push(s);S.soundId=s.id;save();pushOne(D.active);
+    soundsOf(D.active).push(s);S.soundId=s.id;S.quickDone=false;save();
+    pushOne(D.active).then(()=>{if(D.pushAuto&&pushReady())scheduleReminder(s.id,5,true);});
     if(D.shareAudio&&server.audio)uploadAudio(s.id,samples,sr);
   }
   renderTranslation();drawChart();renderLog();
@@ -185,16 +186,44 @@ function renderTranslation(){
   $('labeler').hidden=!S.labelable;$('askThis').hidden=!S.labelable;
   if(S.labelable)renderLabeler();
 }
+function saveLabel(catId,id,ctx,out){
+  const s=soundsOf(catId).find(x=>x.id===id);if(!s)return false;
+  s.label=ctx;if(out!==undefined)s.outcome=out;s.synced=false;save();
+  pushOne(catId);renderBrain();renderLog();return true;
+}
+function renderQuick(){
+  const q=$('quick');const p=S.pred&&S.pred.label;
+  q.hidden=!p||S.quickDone==='hide';
+  if(!p)return;
+  const qq=$('quickQ');qq.textContent='App đoán bé đang: ';const b=document.createElement('b');b.textContent=CONTEXTS[p];qq.append(b,document.createTextNode('. Đúng không?'));
+  ['qYes','qNo'].forEach(id=>$(id).hidden=!!S.quickDone);
+}
 function renderLabeler(){
+  renderQuick();
   const mk=(box,dict,cur,onPick,short)=>{box.textContent='';for(const [k,v] of Object.entries(dict)){const b=document.createElement('button');b.type='button';b.className='chip ctx';b.textContent=short?(short[k]||v):v;b.title=v;b.setAttribute('aria-pressed',String(k===cur));b.onclick=()=>onPick(k);box.append(b);}};
   mk($('ctxChips'),CONTEXTS,S.ctx,k=>{S.ctx=k;$('savedNote').hidden=true;renderLabeler();},SHORT);
   mk($('outChips'),OUTCOMES,S.out,k=>{S.out=k;$('savedNote').hidden=true;renderLabeler();});
   $('saveLbl').disabled=!S.ctx;
 }
 $('saveLbl').onclick=()=>{
-  const s=soundsOf(D.active).find(x=>x.id===S.soundId);if(!s)return;
-  s.label=S.ctx;s.outcome=S.out;s.synced=false;save();
-  $('savedNote').hidden=false;pushOne(D.active);renderBrain();renderLog();
+  if(saveLabel(D.active,S.soundId,S.ctx,S.out)){$('savedNote').hidden=false;S.quickDone='hide';renderQuick();}
+};
+$('qYes').onclick=()=>{
+  S.ctx=S.pred.label;saveLabel(D.active,S.soundId,S.ctx);S.quickDone='yes';renderLabeler();
+  const n=$('quickNote');n.hidden=false;n.textContent='Đã lưu. Nếu muốn, chọn thêm bé thế nào sau khi bạn đáp lại.';
+};
+$('qNo').onclick=()=>{
+  S.ctx=null;S.quickDone='no';renderLabeler();
+  const n=$('quickNote');n.hidden=false;n.textContent='Chọn đúng việc bé đang làm ở bên dưới nhé.';
+  const f=$('ctxChips').querySelector('button');if(f)f.focus();
+};
+$('qLater').onclick=async()=>{
+  const n=$('quickNote');n.hidden=false;
+  const r=await ensurePush();
+  if(!r.ok){n.textContent=r.msg;return;}
+  await pushOne(D.active);
+  const ok=await scheduleReminder(S.soundId,5,false);
+  n.textContent=ok?'Mình sẽ nhắc bạn sau 5 phút.':'Chưa đặt được lời nhắc, thử lại sau nhé.';
 };
 
 // ---------------- chart ----------------
@@ -476,7 +505,30 @@ $('chatform').addEventListener('submit',async e=>{
 $('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('chatform').requestSubmit();}});
 
 // ---------------- log tab ----------------
+function pendingOf(catId){
+  const since=Date.now()-3*864e5;
+  return soundsOf(catId).filter(s=>!s.label&&!s.skipped&&s.createdAt>=since&&(s.source==='mic'||s.source==='upload')).slice(-10).reverse();
+}
+function renderPending(){
+  const list=pendingOf(D.active);const box=$('pending');box.hidden=!list.length;
+  $('pendCount').textContent=list.length?'('+list.length+')':'';
+  const bd=$('logBadge');bd.hidden=!list.length;bd.textContent=String(list.length);
+  const ol=$('pendList');ol.textContent='';
+  for(const s of list){
+    const li=document.createElement('li');li.dataset.id=s.id;
+    const top=document.createElement('div');top.className='p-top';const d=new Date(s.createdAt);
+    const a=document.createElement('b');a.textContent=d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})+' lúc '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+    const g=document.createElement('span');g.textContent='App đoán: '+(SHORT[s.predicted]||'—');top.append(a,g);
+    const ch=document.createElement('div');ch.className='chips';
+    for(const [k,v] of Object.entries(SHORT)){const b=document.createElement('button');b.type='button';b.className='chip ctx';b.textContent=v;b.title=CONTEXTS[k];
+      if(k===s.predicted)b.setAttribute('aria-pressed','true');
+      b.onclick=()=>{saveLabel(D.active,s.id,k);};ch.append(b);}
+    const sk=document.createElement('button');sk.type='button';sk.className='chip ctx';sk.textContent='Không nhớ, bỏ qua';sk.onclick=()=>{s.skipped=true;save();renderLog();};ch.append(sk);
+    li.append(top,ch);ol.append(li);
+  }
+}
 function renderLog(){
+  renderPending();
   const list=soundsOf(D.active).slice(-60).reverse();const ol=$('hList');ol.textContent='';$('hEmpty').hidden=list.length>0;
   for(const s of list){
     const li=document.createElement('li');const d=new Date(s.createdAt);
@@ -490,6 +542,7 @@ function renderLog(){
 
 // ---------------- settings tab ----------------
 function renderSettings(){
+  renderPush();
   $('tokenTxt').textContent=token;$('shareAudio').checked=!!D.shareAudio;
   $('shareAudio').disabled=!server.on;
   const on=consented();
@@ -509,10 +562,89 @@ $('useToken').onclick=()=>openDlg('token');
 $('shareAudio').onchange=async e=>{D.shareAudio=e.target.checked;save();if(server.on){try{await api('/api/me',{method:'PATCH',body:{shareAudio:D.shareAudio}});}catch(err){}}};
 $('exportBtn').onclick=()=>{const o=$('exportOut');o.hidden=!o.hidden;o.textContent=JSON.stringify({cats:D.cats,sounds:D.sounds,personality:D.personality},null,1);};
 
+// ---------------- notifications ----------------
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+function pushSupport(){
+  if(!('serviceWorker' in navigator)||!('Notification' in window)||!('PushManager' in window))return isIOS&&!standalone()?'ios-install':'unsupported';
+  if(!API||!consented())return 'local';
+  if(Notification.permission==='denied')return 'denied';
+  return 'ok';
+}
+const pushReady=()=>D.pushSub&&'Notification' in window&&Notification.permission==='granted'&&server.on;
+function b64ToBytes(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
+const PUSH_MSG={'ios-install':'Trên iPhone, hãy cài Mèo Ngữ vào màn hình chính trước (Chia sẻ → Thêm vào MH chính), rồi mở app từ icon để bật thông báo.',
+  unsupported:'Trình duyệt này chưa hỗ trợ thông báo. Hãy dùng Chrome, Edge, hoặc cài app trên iPhone.',
+  local:'Thông báo cần bật đồng bộ (Cài đặt → Đồng bộ & điều khoản).',
+  denied:'Bạn đã chặn thông báo cho Mèo Ngữ. Mở cài đặt trang trong trình duyệt và cho phép Thông báo.'};
+async function ensurePush(){
+  const sup=pushSupport();if(sup!=='ok')return {ok:false,msg:PUSH_MSG[sup]};
+  const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();
+  if(perm!=='granted')return {ok:false,msg:'Bạn chưa cho phép thông báo nên mình không nhắc được.'};
+  if(!server.on)return {ok:false,msg:'Chưa kết nối được máy chủ.'};
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){const {publicKey}=await api('/api/push/key');sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(publicKey)});}
+    await api('/api/push/subscribe',{method:'POST',body:sub.toJSON()});
+    D.pushSub=true;save();renderSettings();return {ok:true};
+  }catch(e){return {ok:false,msg:'Không bật được thông báo: '+(e.message||e)};}
+}
+async function scheduleReminder(id,delay,silent){
+  try{await api('/api/reminders',{method:'POST',body:{soundId:id,delayMin:delay}});return true;}catch(e){if(!silent)console.warn(e);return false;}
+}
+function renderPush(){
+  const sup=pushSupport();const st=$('pushState');
+  st.textContent=sup!=='ok'?PUSH_MSG[sup]:pushReady()?'Đã bật. App sẽ nhắc qua thông báo của điện thoại hoặc máy tính.':'Chưa bật. Tích ô bên dưới để bật.';
+  $('pushAuto').checked=!!D.pushAuto&&pushReady();$('pushAuto').disabled=sup!=='ok';
+  $('pushTest').hidden=!pushReady();
+}
+$('pushAuto').onchange=async e=>{
+  if(e.target.checked){const r=await ensurePush();if(!r.ok){e.target.checked=false;$('pushState').textContent=r.msg;return;}D.pushAuto=true;}
+  else D.pushAuto=false;
+  save();renderPush();
+};
+$('pushTest').onclick=async()=>{
+  const last=pendingOf(D.active)[0];
+  if(!last){$('pushState').textContent='Hãy thu một tiếng kêu (và chưa gắn nhãn) trước, rồi bấm gửi thử.';return;}
+  await pushOne(D.active);const ok=await scheduleReminder(last.id,1,false);
+  $('pushState').textContent=ok?'Đã hẹn. Khoảng 1–2 phút nữa sẽ có thông báo, kể cả khi bạn đóng app.':'Chưa đặt được lời nhắc.';
+};
+
+// ---------------- install as app ----------------
+let installEvt=null;
+function showInstall(){
+  let dis=0;try{dis=+localStorage.getItem('meongu.installDismissed')||0;}catch(e){}
+  if(standalone()||Date.now()-dis<14*864e5)return;
+  if(installEvt){$('ibInstall').hidden=false;$('installBar').hidden=false;}
+  else if(isIOS){$('ibInstall').hidden=true;$('ibHint').textContent='Trên iPhone: mở bằng Safari, bấm nút Chia sẻ rồi chọn "Thêm vào MH chính".';$('installBar').hidden=false;}
+}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;showInstall();});
+window.addEventListener('appinstalled',()=>{$('installBar').hidden=true;installEvt=null;});
+$('ibInstall').onclick=async()=>{if(!installEvt)return;installEvt.prompt();try{await installEvt.userChoice;}catch(e){}installEvt=null;$('installBar').hidden=true;};
+$('ibClose').onclick=()=>{$('installBar').hidden=true;try{localStorage.setItem('meongu.installDismissed',String(Date.now()));}catch(e){}};
+
+// ---------------- open from a notification ----------------
+function openFromUrl(href){
+  let u;try{u=new URL(href,location.href);}catch(e){return;}
+  const id=u.searchParams.get('label'),catId=u.searchParams.get('cat');
+  if(!id)return;
+  if(catId&&D.cats.find(c=>c.id===catId)&&D.active!==catId){D.active=catId;save();chatLoaded=null;renderAll();}
+  selectTab('log');
+  const li=document.querySelector('#pendList li[data-id="'+CSS.escape(id)+'"]');
+  if(li){li.classList.add('hl');li.scrollIntoView({behavior:'smooth',block:'center'});}
+  try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}
+}
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='open')openFromUrl(e.data.url);});
+}
+
 // ---------------- tabs ----------------
 const TABS=['analysis','brain','persona','chat','log','settings'];
 function selectTab(t){
   TABS.forEach(x=>{$('tab-'+x).setAttribute('aria-selected',String(x===t));$('p-'+x).hidden=x!==t;});
+  const tb=$('tab-'+t);tb.parentElement.scrollTo({left:Math.max(0,tb.offsetLeft-tb.parentElement.clientWidth/2+tb.clientWidth/2),behavior:'smooth'});
   try{sessionStorage.setItem('meongu.tab',t);}catch(e){}
   if(t==='analysis')drawChart();if(t==='brain')renderBrain();if(t==='persona')renderPersona();if(t==='chat')renderChat();if(t==='log')renderLog();if(t==='settings')renderSettings();
 }
@@ -534,5 +666,6 @@ let startTab='analysis';try{const h=(location.hash||'').slice(1);const st=sessio
 selectTab(startTab);
 const ex=synthFromText('meooooo?',4242);runAnalysis(ex.samples,ex.sampleRate,'Ví dụ: meooooo?');
 if(API&&(!D.consent||(D.consent.v!=='local'&&D.consent.v!==CONSENT_V)))openConsent();
-syncAll();
+syncAll().then(()=>{openFromUrl(location.href);renderPush();});
+showInstall();
 })();
