@@ -8,6 +8,7 @@ ALLOWED_ORIGINS = "https://hieunguyen1312.github.io,http://localhost:8080"
 AGENT_PROVIDERS = "gemini,workersai,anthropic"
 GEMINI_MODEL = "gemini-3.1-flash-lite"
 WORKERS_AI_MODEL = "@cf/google/gemma-4-26b-a4b-it"
+WORKERS_AI_VISION_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct"
 AGENT_MODEL = "claude-haiku-5-5"
 AGENT_DAILY_LIMIT = "10"
 # Secrets (never commit), set in the dashboard or with `npx wrangler secret put`:

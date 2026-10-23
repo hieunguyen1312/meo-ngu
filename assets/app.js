@@ -470,7 +470,7 @@ $('visAgain').onclick=()=>$('visIn').click();
 $('visGo').onclick=async()=>{
   if(!VS)return;
   if(!server.on||!server.agent){visMsg('Cần bật đồng bộ máy chủ để AI đọc ảnh.','Vào Cài đặt, đồng ý điều khoản để bật.');return;}
-  $('visGo').disabled=true;visMsg('AI đang xem ảnh của bé…','Thường mất 5 đến 20 giây.');
+  $('visGo').disabled=true;visMsg('AI đang xem ảnh của bé…','Có thể mất tới nửa phút, bạn giữ màn hình mở nhé.');
   try{
     await pushOne(D.active); // the cat must exist on the server
     const r=await api('/api/vision',{method:'POST',body:{catId:D.active,images:VS.images,isVideo:VS.isVideo,note:$('visNote').value.trim()||undefined,persona:D.persona}});
