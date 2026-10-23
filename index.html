@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=7">
+<link rel="stylesheet" href="assets/style.css?v=8">
 </head>
 <body>
 <div class="wrap">
@@ -65,6 +65,11 @@
         <h3 id="boutsHead">—</h3>
         <p id="boutsNote"></p>
         <ol id="boutList"></ol>
+      </div>
+      <div class="vis-cta">
+        <label class="btn sm" for="visIn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> Bé không kêu? Chụp ảnh hoặc quay video</label>
+        <input id="visIn" type="file" accept="image/*,video/*" multiple hidden>
+        <span>AI đọc tai, mắt, đuôi, tư thế của bé.</span>
       </div>
       <div class="sep">hoặc thử nhanh</div>
       <div class="chips" id="chips"></div>
@@ -119,6 +124,37 @@
     </div>
   </section>
 
+  <section class="panel vision" id="visPanel" hidden aria-labelledby="vis-title">
+    <div class="label" id="vis-title">Ngôn ngữ cơ thể</div>
+    <div class="vis-thumbs" id="visThumbs"></div>
+    <div id="visForm">
+      <input id="visNote" maxlength="300" autocomplete="off" placeholder="Kể thêm (không bắt buộc): bé đang ở đâu, vừa làm gì…" aria-label="Kể thêm về bé">
+      <p class="vis-tip">Chỉ cần chụp bé mèo, tránh chụp mặt người. Ảnh được gửi cho AI để đọc rồi bỏ, máy chủ chỉ lưu kết quả. Mỗi lần đọc dùng 1 lượt trong hạn mức hằng ngày.</p>
+      <div class="actions"><button class="btn primary" id="visGo" type="button">Đọc ngôn ngữ cơ thể</button><button class="btn" id="visCancel" type="button">Huỷ</button></div>
+    </div>
+    <div class="mic-msg" id="visMsg" hidden></div>
+    <div class="vis-result" id="visResult" hidden aria-live="polite">
+      <div class="vis-tags"><div class="intent" id="visMood"><i></i><span>—</span></div><div class="intent alt" id="visCtx"><i></i><span>—</span></div></div>
+      <p class="quote" id="visQuote">…</p>
+      <p class="vis-sum" id="visSum"></p>
+      <div class="meter"><div class="meter-top"><span>Độ tự tin</span><b id="visConfTxt">—</b></div><div class="bar"><span id="visConfBar" style="width:0"></span></div></div>
+      <div class="vis-warn" id="visWarn" hidden></div>
+      <div class="vis-cols">
+        <div><h3>Tín hiệu AI thấy</h3><ul class="vis-sig" id="visSig"></ul></div>
+        <div><h3>Bạn nên làm</h3><ul class="vis-list" id="visDo"></ul><h3 id="visDontH">Nên tránh</h3><ul class="vis-list" id="visDont"></ul></div>
+      </div>
+      <div class="vis-traits" id="visTraits" hidden></div>
+      <div class="quick" id="visFb">
+        <p id="visFbQ">—</p>
+        <div class="actions"><button class="btn primary" id="visYes" type="button">Đúng</button><button class="btn" id="visNo" type="button">Không phải</button></div>
+        <div class="chips" id="visCtxChips" hidden></div>
+        <span class="saved-note" id="visFbNote" hidden></span>
+      </div>
+      <div class="actions"><button class="btn" id="visAsk" type="button">Hỏi chuyên gia về ảnh này</button><button class="btn" id="visAgain" type="button">Chụp ảnh khác</button></div>
+      <p class="note">AI có thể đọc sai, nhất là với ảnh tĩnh. Bạn xác nhận Đúng/Không phải để hồ sơ tính cách của bé chính xác hơn.</p>
+    </div>
+  </section>
+
   <section class="panel">
     <div class="tabs" role="tablist" id="tabs">
       <button role="tab" id="tab-analysis" aria-controls="p-analysis" aria-selected="true">Phân tích</button>
@@ -164,6 +200,7 @@
       <h2 class="h2">Tính cách của <span class="catname"></span></h2>
       <p class="empty">Dựa trên mô hình Feline Five (Litchfield và cộng sự, 2017; khảo sát 2.802 con mèo). Đây là bản rút gọn 10 câu để tham khảo, chưa phải bảng đánh giá đầy đủ. Chấm từ 1 (hoàn toàn không đúng) đến 7 (rất đúng).</p>
       <div class="traits" id="traits"></div>
+      <div class="vis-hist" id="visHist" hidden></div>
       <div class="quiz" id="quiz"></div>
       <div class="actions"><button class="btn primary" id="saveQuiz" type="button" disabled>Lưu kết quả</button><span class="saved-note" id="quizNote" hidden>Đã lưu.</span></div>
     </div>
@@ -251,15 +288,15 @@
 <div class="dialog-bg" id="consent" hidden>
   <form class="dialog" id="consentForm" aria-labelledby="consentTitle">
     <h3 id="consentTitle">Trước khi đồng bộ</h3>
-    <p class="empty">Để lưu dữ liệu lên máy chủ và hỏi chuyên gia AI, Mèo Ngữ cần bạn đồng ý với cách app xử lý dữ liệu. Câu hỏi bạn gửi chuyên gia được xử lý bởi Cloudflare hoặc Google Gemini, ở ngoài Việt Nam.</p>
+    <p class="empty">Để lưu dữ liệu lên máy chủ và hỏi chuyên gia AI, Mèo Ngữ cần bạn đồng ý với cách app xử lý dữ liệu. Câu hỏi và ảnh bạn gửi cho AI được xử lý bởi Cloudflare hoặc Google Gemini, ở ngoài Việt Nam. Máy chủ không lưu ảnh.</p>
     <label class="check"><input type="checkbox" id="c-agree"> <span>Tôi từ 18 tuổi trở lên và đồng ý với <a href="privacy.html" target="_blank" rel="noopener">Điều khoản & Quyền riêng tư</a>.</span></label>
     <label class="check"><input type="checkbox" id="c-model"> <span>Cho phép dùng các số đo và nhãn ngữ cảnh của bé (không gồm âm thanh, ghi chú hay trò chuyện) để cải thiện mô hình chung. Không bắt buộc.</span></label>
     <div class="actions"><button class="btn primary" type="submit" id="c-ok" disabled>Đồng ý và bật đồng bộ</button><button class="btn" type="button" id="c-local">Chỉ dùng trên máy này</button></div>
   </form>
 </div>
 
-<script src="assets/config.js?v=7"></script>
-<script src="assets/core.js?v=7"></script>
-<script src="assets/app.js?v=7"></script>
+<script src="assets/config.js?v=8"></script>
+<script src="assets/core.js?v=8"></script>
+<script src="assets/app.js?v=8"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=4">
+<link rel="stylesheet" href="assets/style.css?v=8">
 <style>
 .doc{max-width:720px;margin:0 auto;display:grid;gap:22px}
 .doc h1{font:800 clamp(30px,5vw,42px)/1.1 var(--f-display);margin:0;letter-spacing:-0.02em}
@@ -25,13 +25,14 @@
 <main class="doc">
   <a href="./" class="meta">← Về Mèo Ngữ</a>
   <h1>Điều khoản & Quyền riêng tư</h1>
-  <p class="meta">Phiên bản 2026-10-19 · Thay đổi so với bản trước: thêm thông báo nhắc gắn nhãn.</p>
+  <p class="meta">Phiên bản 2026-10-23 · Thay đổi so với bản trước: thêm tính năng đọc ngôn ngữ cơ thể từ ảnh và video.</p>
 
   <div class="box">
     <b>Tóm tắt</b>
     <ul>
       <li>Không cần tài khoản. App không hỏi tên, email, số điện thoại hay vị trí của bạn.</li>
       <li>Mặc định app chỉ gửi <b>các con số đo được</b> từ tiếng mèo (cao độ, độ dài…), không gửi âm thanh.</li>
+      <li>Khi bạn dùng "Chụp ảnh hoặc quay video", ảnh (hoặc 4 khung hình lấy từ video) được gửi cho nhà cung cấp AI để đọc. Máy chủ Mèo Ngữ <b>không lưu ảnh</b>, chỉ lưu kết quả đọc dạng chữ.</li>
       <li>Câu hỏi bạn gửi cho chuyên gia AI được xử lý bởi nhà cung cấp AI bên thứ ba, ở ngoài Việt Nam.</li>
       <li>Bạn xem và xoá toàn bộ dữ liệu của mình bất cứ lúc nào trong mục Cài đặt.</li>
       <li>Mèo Ngữ không thay thế bác sĩ thú y.</li>
@@ -45,6 +46,7 @@
       <li><b>Hồ sơ mèo</b> bạn nhập: tên, giới tính, triệt sản, năm sinh, giống, ghi chú.</li>
       <li><b>Số đo tiếng kêu</b>: khoảng 12 con số mô tả mỗi lần thu, kèm ngữ cảnh app đoán, nhãn bạn chọn và kết quả sau khi bạn đáp lại.</li>
       <li><b>Kết quả bộ câu hỏi tính cách</b> và <b>ghi chép hành vi</b> (do bạn nhập hoặc chuyên gia AI ghi lại từ lời kể của bạn).</li>
+      <li><b>Kết quả đọc ngôn ngữ cơ thể</b>: cảm xúc, ngữ cảnh, các tín hiệu AI thấy (tai, mắt, đuôi, tư thế…) và việc bạn xác nhận đúng hay sai. Ảnh và khung hình gốc không được lưu: chúng chỉ đi qua máy chủ để chuyển cho AI. Ảnh xem trước nằm trong trình duyệt của bạn và mất khi tải lại trang.</li>
       <li><b>Nội dung trò chuyện</b> với chuyên gia AI.</li>
       <li><b>Địa chỉ nhận thông báo</b>, chỉ khi bạn bật "Nhắc gắn nhãn": trình duyệt cấp một địa chỉ để máy chủ gửi lời nhắc. App cũng lưu thời điểm cần nhắc cho từng tiếng kêu chưa gắn nhãn. Lời nhắc chỉ gồm tên bé và giờ bé kêu.</li>
       <li><b>Bản ghi âm gốc</b>: chỉ khi bạn tự bật "Chia sẻ bản ghi âm" trong Cài đặt. Bản ghi có thể lẫn giọng người trong nhà.</li>
@@ -66,11 +68,11 @@
     <h2>3. Bên xử lý dữ liệu</h2>
     <ul>
       <li><b>Cloudflare</b>: lưu trữ dữ liệu (D1, R2) và chạy mô hình AI Workers AI.</li>
-      <li><b>Google (Gemini API)</b>, khi được bật làm chuyên gia AI. Ở gói miễn phí, Google có thể dùng nội dung gửi đến và câu trả lời để cải thiện sản phẩm của họ, và người duyệt của Google có thể đọc nội dung đó.</li>
+      <li><b>Google (Gemini API)</b>, khi được bật làm chuyên gia AI. Ở gói miễn phí, Google có thể dùng nội dung gửi đến (gồm cả ảnh) và câu trả lời để cải thiện sản phẩm của họ, và người duyệt của Google có thể xem nội dung đó.</li>
       <li><b>Anthropic (Claude)</b>, nếu được bật làm tầng dự phòng.</li>
       <li><b>Dịch vụ thông báo của trình duyệt</b> (Google, Apple hoặc Mozilla, tuỳ máy bạn), khi bạn bật nhắc gắn nhãn. Nội dung lời nhắc được mã hoá đầu cuối, dịch vụ này không đọc được.</li>
     </ul>
-    <div class="box warn"><b>Đừng gửi thông tin cá nhân nhạy cảm vào khung trò chuyện</b> (họ tên đầy đủ, địa chỉ, số điện thoại, thông tin sức khoẻ của người). Chỉ cần kể về bé mèo.</div>
+    <div class="box warn"><b>Đừng gửi thông tin cá nhân nhạy cảm vào khung trò chuyện hay trong ảnh</b> (họ tên đầy đủ, địa chỉ, số điện thoại, thông tin sức khoẻ của người, mặt người, giấy tờ). Chỉ cần kể và chụp bé mèo.</div>
   </section>
 
   <section>

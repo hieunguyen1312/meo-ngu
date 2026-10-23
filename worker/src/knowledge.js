@@ -20,6 +20,17 @@ export const OUTCOMES = {
   ignored: 'Chưa đáp lại',
 };
 
+export const MOODS = {
+  thu_gian: 'Thư giãn',
+  than_thien: 'Vui vẻ, thân thiện',
+  to_mo: 'Tò mò',
+  choi: 'Hưng phấn, muốn chơi',
+  lo_so: 'Lo lắng, sợ',
+  cang_thang: 'Căng thẳng, khó chịu',
+  buon_ngu: 'Mệt, buồn ngủ',
+  khong_ro: 'Chưa rõ',
+};
+
 export const FELINE_FIVE = {
   neuroticism: 'Nhạy cảm/lo âu (Neuroticism): bất an, dễ sợ người hoặc mèo khác, nghi ngờ, nhút nhát, căng thẳng',
   extraversion: 'Hướng ngoại/ham khám phá (Extraversion): năng động, tò mò, thông minh, sáng tạo, cảnh giác, kiên trì',

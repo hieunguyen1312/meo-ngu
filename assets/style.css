@@ -214,3 +214,35 @@ footer{color:var(--muted);font-size:13px;max-width:70ch}
 .pending .p-top{display:flex;justify-content:space-between;gap:10px;font-size:14px;flex-wrap:wrap}
 .pending .p-top span{color:var(--muted)}
 .pending .chips{gap:6px}
+
+/* v4: body language from photos */
+.vis-cta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.vis-cta .btn{display:inline-flex;gap:6px;align-items:center}
+.vision{display:grid;gap:14px}
+.vis-thumbs{display:flex;gap:8px;overflow-x:auto}
+.vis-thumbs img{width:88px;height:88px;object-fit:cover;border-radius:10px;flex:none;background:var(--sunken)}
+#visForm{display:grid;gap:10px}
+#visNote{font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box}
+.vis-tip{margin:0;font-size:13px;color:var(--muted)}
+.vis-result{display:grid;gap:14px}
+.vis-tags{display:flex;gap:8px;flex-wrap:wrap}
+.intent.alt{background:var(--ginger-soft);color:var(--ginger)}
+.vis-sum{margin:0;font-size:15px}
+.vis-warn{background:var(--ginger-soft);border-left:4px solid var(--rec);border-radius:10px;padding:10px 12px;font-size:14px}
+.vis-cols{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.vis-cols h3,.vis-traits h3,.vis-hist h3{margin:0 0 6px;font:700 15px/1.3 var(--f-display)}
+.vis-cols h3+ul+h3{margin-top:12px}
+.vis-sig,.vis-list{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:14px}
+.vis-sig li{display:grid;grid-template-columns:64px 1fr;gap:8px}
+.vis-sig b{font:600 12px/1.5 var(--f-mono);color:var(--muted);text-transform:uppercase}
+.vis-sig span small{display:block;color:var(--muted)}
+.vis-list li{padding-left:16px;position:relative}
+.vis-list li::before{content:"";position:absolute;left:2px;top:.6em;width:6px;height:6px;border-radius:50%;background:var(--teal)}
+#visDont li::before{background:var(--rec)}
+.vis-traits{background:var(--teal-soft);border-radius:12px;padding:12px 14px;font-size:14px;display:grid;gap:4px}
+.vis-traits p{margin:0}
+.vis-hist{display:grid;gap:8px;background:var(--sunken);border-radius:12px;padding:12px 14px;font-size:14px}
+.vis-hist p{margin:0}
+.vis-hist .chips{gap:6px}
+.vis-hist .chip{cursor:default}
+.vis-hist ol{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--muted)}

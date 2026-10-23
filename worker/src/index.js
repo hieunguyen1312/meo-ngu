@@ -1,6 +1,7 @@
 // Mèo Ngữ API — Cloudflare Worker + D1 (+ optional R2) + Claude agent.
 import { CONTEXTS, OUTCOMES, FELINE_FIVE, KNOWLEDGE } from './knowledge.js';
 import { generateVapidKeys, sendPush } from './webpush.js';
+import { MAX_IMAGES, MAX_IMAGE_CHARS, checkImages, visionPrompt, parseVision, observationText, callVision } from './vision.js';
 
 const MAX_BODY = 64 * 1024;
 const MAX_AUDIO = 2 * 1024 * 1024;
@@ -16,7 +17,7 @@ export default {
     } catch (e) {
       const status = e.status || 500;
       if (status >= 500) console.error(e && e.stack || e);
-      return json({ error: e.code || 'server_error', message: status >= 500 ? 'Máy chủ gặp lỗi, thử lại sau.' : e.message }, status, cors);
+      return json({ error: e.code || 'server_error', message: (e instanceof HttpError || status < 500) ? e.message : 'Máy chủ gặp lỗi, thử lại sau.' }, status, cors);
     }
   },
   // Cron (every minute): send due "label this meow" reminders.
@@ -50,11 +51,11 @@ async function sha256(s) {
   return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function readJson(req) {
+async function readJson(req, max = MAX_BODY) {
   const len = Number(req.headers.get('content-length') || 0);
-  if (len > MAX_BODY) throw bad('Dữ liệu gửi lên quá lớn.');
+  if (len > max) throw bad('Dữ liệu gửi lên quá lớn.');
   const t = await req.text();
-  if (t.length > MAX_BODY) throw bad('Dữ liệu gửi lên quá lớn.');
+  if (t.length > max) throw bad('Dữ liệu gửi lên quá lớn.');
   if (!t) return {};
   try { return JSON.parse(t); } catch { throw bad('JSON không hợp lệ.'); }
 }
@@ -251,6 +252,18 @@ async function route(req, env, ctx) {
   }
 
   if (p === '/api/agent' && M === 'POST') return agent(req, env, user);
+  if (p === '/api/vision' && M === 'POST') return vision(req, env, user);
+  if ((m = p.match(/^\/api\/observations\/([\w-]+)$/)) && M === 'PATCH') {
+    // Owner feedback on an AI reading: confirm the context, or mark it wrong.
+    const o = await env.DB.prepare('SELECT id, tags FROM observations WHERE id = ? AND user_id = ?').bind(m[1], user.id).first();
+    if (!o) throw new HttpError(404, 'not_found', 'Không tìm thấy ghi chép.');
+    const b = await readJson(req);
+    const tags = (safeParse(o.tags) || []).filter(t => !/^(chu_xac_nhan|chu_bao_sai)/.test(t));
+    if (b.verdict === 'right') tags.push('chu_xac_nhan');
+    else if (b.verdict === 'wrong') tags.push('chu_bao_sai' + (ctxKey(b.context) ? ':' + b.context : ''));
+    await env.DB.prepare('UPDATE observations SET tags = ? WHERE id = ?').bind(JSON.stringify(tags.slice(0, 8)), o.id).run();
+    return json({ ok: true, tags });
+  }
 
   // ---- push notifications ----
   if (p === '/api/push/key' && M === 'GET') return json({ publicKey: (await getVapid(env)).publicKey });
@@ -331,6 +344,7 @@ Nhiệm vụ:
 Nguyên tắc:
 - Luôn gọi tool để xem dữ liệu trước khi nhận định về bé. Nói rõ khi dữ liệu còn ít (ví dụ dưới 20 tiếng kêu đã gắn nhãn) và đừng kết luận chắc chắn.
 - Phân biệt rõ điều dữ liệu cho thấy và điều bạn suy đoán. Không bịa số liệu.
+- Ghi chép có by="vision" là AI đọc ngôn ngữ cơ thể từ ảnh/video, có thể sai; tin hơn khi có tag "chu_xac_nhan", bỏ qua khi có tag bắt đầu bằng "chu_bao_sai". Nhiều lần đọc ảnh cùng xu hướng mới đủ để nhận xét về tính cách.
 - Bạn không phải bác sĩ thú y, không chẩn đoán bệnh. Khi có dấu hiệu bất thường hoặc khẩn cấp, nói thẳng và khuyên đưa đi thú y; với dấu hiệu khẩn cấp thì khuyên đi ngay.
 - Không khuyên phạt, đánh, xịt nước, hét vào mèo.
 - Trả lời bằng tiếng Việt, xưng "mình", gọi chủ là "bạn", gọi mèo là "bé ${cat.name}". Ngắn gọn, dễ làm theo: tối đa khoảng 180 chữ trừ khi chủ hỏi sâu. Dùng gạch đầu dòng cho các bước hành động.
@@ -463,6 +477,50 @@ async function loopAnthropic(env, user, cat, system, history, userContent, saved
   return '';
 }
 
+// One daily allowance shared by chat questions and photo readings.
+async function useQuota(env, user) {
+  const d = today();
+  const calls = user.agent_day === d ? user.agent_calls : 0;
+  if (calls >= limit(env)) throw new HttpError(429, 'quota', `Bạn đã dùng hết ${limit(env)} lượt hôm nay (hỏi chuyên gia và đọc ảnh dùng chung). Mai quay lại nhé.`);
+  await env.DB.prepare('UPDATE users SET agent_day = ?, agent_calls = ? WHERE id = ?').bind(d, calls + 1, user.id).run();
+  return calls;
+}
+
+async function vision(req, env, user) {
+  const chain = providerChain(env, req.cf && req.cf.country);
+  if (!chain.length) throw new HttpError(503, 'agent_off', 'Máy chủ chưa cấu hình AI.');
+  const b = await readJson(req, MAX_IMAGES * MAX_IMAGE_CHARS + 16 * 1024);
+  const cat = await ownCat(env, user, String(b.catId || ''));
+  const err = checkImages(b.images);
+  if (err) throw bad(err);
+  const isVideo = !!b.isVideo;
+  const note = str(b.note, 300, 'Ghi chú');
+  const calls = await useQuota(env, user);
+
+  const system = visionPrompt(cat, b.persona, isVideo, note);
+  const userText = isVideo ? `Đây là ${b.images.length} khung hình theo thứ tự thời gian. Hãy đọc ngôn ngữ cơ thể của bé ${cat.name}.` : `Hãy đọc ngôn ngữ cơ thể của bé ${cat.name} trong ảnh.`;
+  let result = null, used = null;
+  for (const p of chain) {
+    try {
+      const text = await callVision(env, p, system, userText, b.images);
+      result = parseVision(text);
+      if (result) { used = p; break; }
+      console.warn('vision: unparsable reply from', p, String(text).slice(0, 300));
+    } catch (e) { console.error('vision provider failed', p, String(e && e.message || e).slice(0, 300)); }
+  }
+  if (!result) {
+    // Give the allowance back: the owner got nothing for it.
+    await env.DB.prepare('UPDATE users SET agent_calls = ? WHERE id = ?').bind(calls, user.id).run();
+    throw new HttpError(503, 'vision_busy', 'AI đang bận hoặc chưa đọc được ảnh này, bạn thử lại sau ít phút nhé.');
+  }
+  let observationId = null;
+  if (result.coMeo && result.chatLuongAnh !== 'kem') {
+    const o = await addObservation(env, user, cat, 'body', observationText(result, isVideo), [result.camXuc, result.nguCanh, isVideo ? 'video' : 'anh'], 'vision');
+    observationId = o.id;
+  }
+  return json({ result, provider: used, observationId, callsLeft: Math.max(0, limit(env) - calls - 1) });
+}
+
 async function agent(req, env, user) {
   const chain = providerChain(env, req.cf && req.cf.country);
   if (!chain.length) throw new HttpError(503, 'agent_off', 'Máy chủ chưa cấu hình trợ lý.');
@@ -471,10 +529,7 @@ async function agent(req, env, user) {
   const text = str(b.message, 2000, 'Câu hỏi');
   if (!text) throw bad('Bạn chưa nhập câu hỏi.');
 
-  const d = today();
-  const calls = user.agent_day === d ? user.agent_calls : 0;
-  if (calls >= limit(env)) throw new HttpError(429, 'quota', `Bạn đã dùng hết ${limit(env)} lượt hỏi hôm nay. Mai quay lại nhé.`);
-  await env.DB.prepare('UPDATE users SET agent_day = ?, agent_calls = ? WHERE id = ?').bind(d, calls + 1, user.id).run();
+  const calls = await useQuota(env, user);
 
   const hist = (await env.DB.prepare('SELECT role, content FROM messages WHERE cat_id = ? ORDER BY created_at DESC LIMIT 8').bind(cat.id).all()).results.reverse();
   const history = hist.map(h => ({ role: h.role, content: h.content }));

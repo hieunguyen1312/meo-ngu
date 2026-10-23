@@ -68,9 +68,9 @@ function newToken(){const a=new Uint8Array(24);crypto.getRandomValues(a);return 
 
 let token=LS.get('token',null);if(!token){token=newToken();LS.set('token',token);}
 const D={cats:LS.get('cats',[]),active:LS.get('active',null),sounds:LS.get('sounds',{}),personality:LS.get('personality',{}),
-  persona:LS.get('persona','nung'),shareAudio:LS.get('shareAudio',false),consent:LS.get('consent',null),pushAuto:LS.get('pushAuto',false),pushSub:LS.get('pushSub',false)};
-function save(){LS.set('cats',D.cats);LS.set('active',D.active);LS.set('sounds',D.sounds);LS.set('personality',D.personality);LS.set('persona',D.persona);LS.set('shareAudio',D.shareAudio);LS.set('consent',D.consent);LS.set('pushAuto',D.pushAuto);LS.set('pushSub',D.pushSub);}
-const CONSENT_V='2026-10-19';
+  persona:LS.get('persona','nung'),shareAudio:LS.get('shareAudio',false),consent:LS.get('consent',null),pushAuto:LS.get('pushAuto',false),pushSub:LS.get('pushSub',false),visions:LS.get('visions',{})};
+function save(){LS.set('cats',D.cats);LS.set('active',D.active);LS.set('sounds',D.sounds);LS.set('personality',D.personality);LS.set('persona',D.persona);LS.set('shareAudio',D.shareAudio);LS.set('consent',D.consent);LS.set('pushAuto',D.pushAuto);LS.set('pushSub',D.pushSub);LS.set('visions',D.visions);}
+const CONSENT_V='2026-10-23';
 const consented=()=>D.consent&&D.consent.v===CONSENT_V;
 if(!D.cats.length){const c={id:rid(),name:'Mèo của tôi',sex:null,neutered:null,birth_year:null,breed:null,notes:null,synced:false};D.cats.push(c);D.active=c.id;save();}
 if(!D.cats.find(c=>c.id===D.active))D.active=D.cats[0].id;
@@ -420,6 +420,126 @@ $('fileIn').onchange=async e=>{
   else selectBout(0,false);
 };
 
+// ---------------- body language from photos / video frames ----------------
+const MOODS={thu_gian:'Thư giãn',than_thien:'Vui vẻ, thân thiện',to_mo:'Tò mò',choi:'Hưng phấn, muốn chơi',lo_so:'Lo lắng, sợ',cang_thang:'Căng thẳng, khó chịu',buon_ngu:'Mệt, buồn ngủ',khong_ro:'Chưa rõ'};
+const VIS_PX=768,VIS_N=4;
+const visOf=id=>D.visions[id]||(D.visions[id]=[]);
+let VS=null; // {images:[dataURL], isVideo, file, res, entry}
+function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>rej(new Error('img'));im.src=src;});}
+function toJpeg(src,w,h){
+  const k=Math.min(1,VIS_PX/Math.max(w,h));const cv=document.createElement('canvas');cv.width=Math.round(w*k);cv.height=Math.round(h*k);
+  cv.getContext('2d').drawImage(src,0,0,cv.width,cv.height);return cv.toDataURL('image/jpeg',0.75);
+}
+async function imageToJpeg(file){const u=URL.createObjectURL(file);try{const im=await loadImg(u);return toJpeg(im,im.naturalWidth,im.naturalHeight);}finally{URL.revokeObjectURL(u);}}
+function waitEv(el,ev,ms){return new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error('timeout '+ev)),ms);el.addEventListener(ev,()=>{clearTimeout(t);res();},{once:true});el.addEventListener('error',()=>{clearTimeout(t);rej(new Error('video'));},{once:true});});}
+async function videoFrames(file,n){
+  const u=URL.createObjectURL(file);const v=document.createElement('video');
+  v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';v.src=u;
+  try{
+    await waitEv(v,'loadeddata',20000);
+    try{await v.play();v.pause();}catch(e){} // iOS only paints frames after a first play
+    const dur=v.duration;if(!isFinite(dur)||dur<=0||!v.videoWidth)throw new Error('novideo');
+    const out=[];
+    for(let i=0;i<n;i++){const t=Math.min(dur-0.05,dur*(i+0.5)/n);const p=waitEv(v,'seeked',8000);v.currentTime=t;await p;out.push(toJpeg(v,v.videoWidth,v.videoHeight));}
+    return out;
+  }finally{v.removeAttribute('src');v.load();URL.revokeObjectURL(u);}
+}
+function visMsg(bold,rest){const m=$('visMsg');if(!bold){m.hidden=true;return;}m.hidden=false;m.textContent='';const b=document.createElement('b');b.textContent=bold;m.append(b);if(rest)m.append(document.createTextNode(' '+rest));}
+function showVisPanel(){const p=$('visPanel');p.hidden=false;p.scrollIntoView({behavior:'smooth',block:'start'});}
+$('visIn').onchange=async e=>{
+  const files=[...(e.target.files||[])];e.target.value='';if(!files.length)return;
+  VS=null;$('visResult').hidden=true;$('visForm').hidden=false;$('visThumbs').textContent='';showVisPanel();
+  const vid=files.find(f=>/^video\//.test(f.type)||/\.(mp4|mov|m4v|webm|3gp)$/i.test(f.name));
+  $('visGo').disabled=true;visMsg(vid?'Đang lấy khung hình từ video…':'Đang chuẩn bị ảnh…');
+  let images=[],note='';
+  try{
+    if(vid){images=await videoFrames(vid,VIS_N);if(files.length>1)note='Chỉ dùng video, bỏ qua các ảnh chọn kèm.';}
+    else{const imgs=files.filter(f=>/^image\//.test(f.type)||/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+      if(imgs.length>VIS_N)note='Chỉ dùng '+VIS_N+' ảnh đầu.';
+      for(const f of imgs.slice(0,VIS_N)){try{images.push(await imageToJpeg(f));}catch(err){}}}
+  }catch(err){images=[];}
+  if(!images.length){visMsg(vid?'Không đọc được hình từ video này.':'Không đọc được ảnh này.',vid?'Trình duyệt có thể không hỗ trợ định dạng video. Thử chụp ảnh, hoặc quay video bằng camera thường của điện thoại.':'Hãy thử ảnh .jpg hoặc .png.');return;}
+  VS={images,isVideo:!!vid,file:(vid||files[0]).name};
+  for(const src of images){const im=document.createElement('img');im.src=src;im.alt=vid?'Khung hình từ video':'Ảnh của bé';$('visThumbs').append(im);}
+  $('visGo').disabled=false;
+  if(!server.on||!server.agent)visMsg('Cần bật đồng bộ máy chủ để AI đọc ảnh.','Vào Cài đặt, đồng ý điều khoản để bật.');
+  else visMsg(note||(vid?'Đã lấy '+images.length+' khung hình rải đều trong video.':''));
+};
+$('visCancel').onclick=()=>{VS=null;$('visPanel').hidden=true;};
+$('visAgain').onclick=()=>$('visIn').click();
+$('visGo').onclick=async()=>{
+  if(!VS)return;
+  if(!server.on||!server.agent){visMsg('Cần bật đồng bộ máy chủ để AI đọc ảnh.','Vào Cài đặt, đồng ý điều khoản để bật.');return;}
+  $('visGo').disabled=true;visMsg('AI đang xem ảnh của bé…','Thường mất 5 đến 20 giây.');
+  try{
+    await pushOne(D.active); // the cat must exist on the server
+    const r=await api('/api/vision',{method:'POST',body:{catId:D.active,images:VS.images,isVideo:VS.isVideo,note:$('visNote').value.trim()||undefined,persona:D.persona}});
+    VS.res=r.result;
+    const en={at:Date.now(),obsId:r.observationId,mood:r.result.camXuc,ctx:r.result.nguCanh,conf:r.result.doTinCay,sum:r.result.tomTat,traits:r.result.goiYTinhCach,video:VS.isVideo,verdict:null};
+    if(r.result.coMeo&&r.result.chatLuongAnh!=='kem'){visOf(D.active).push(en);if(visOf(D.active).length>200)visOf(D.active).shift();save();}
+    VS.entry=en;visMsg(null);renderVision(r);
+  }catch(err){visMsg(err.code==='quota'?'Hết lượt hôm nay.':'Chưa đọc được ảnh.',err.message||'');}
+  finally{$('visGo').disabled=false;}
+};
+function renderVision(r){
+  const R=r.result;
+  if(!R.coMeo){visMsg('Không thấy bé mèo trong ảnh.','Chụp gần hơn, thấy rõ mặt, tai và đuôi của bé.');$('visResult').hidden=true;return;}
+  if(R.chatLuongAnh==='kem'){visMsg('Ảnh quá tối, mờ hoặc xa để đọc.','Chụp lại ở chỗ sáng hơn, giữ máy yên, thấy được cả người bé. Lần này chưa lưu vào hồ sơ.');}
+  $('visForm').hidden=true;$('visResult').hidden=false;
+  $('visMood').querySelector('span').textContent=MOODS[R.camXuc]||'Chưa rõ';
+  $('visCtx').querySelector('span').textContent=CONTEXTS[R.nguCanh]||'—';
+  $('visQuote').textContent=R.loiMeo||(PHRASES[R.nguCanh]?PHRASES[R.nguCanh][D.persona][0]:'…');
+  $('visSum').textContent=R.tomTat;
+  $('visConfTxt').textContent=R.doTinCay+'%';$('visConfBar').style.width=R.doTinCay+'%';
+  const w=$('visWarn');w.hidden=!R.canhBao;w.textContent='';if(R.canhBao){const b=document.createElement('b');b.textContent='Nên cho bé đi thú y: ';w.append(b,document.createTextNode(R.canhBao));}
+  const sig=$('visSig');sig.textContent='';
+  for(const x of R.tinHieu){const li=document.createElement('li');const b=document.createElement('b');b.textContent=x.phan;const sp=document.createElement('span');sp.textContent=x.thay;if(x.yNghia){const sm=document.createElement('small');sm.textContent=x.yNghia;sp.append(sm);}li.append(b,sp);sig.append(li);}
+  if(!R.tinHieu.length){const li=document.createElement('li');li.textContent='Không thấy rõ tín hiệu nào.';sig.append(li);}
+  const fill=(id,list)=>{const ul=$(id);ul.textContent='';for(const t of list){const li=document.createElement('li');li.textContent=t;ul.append(li);}};
+  fill('visDo',R.nenLam);fill('visDont',R.tranhLam);$('visDontH').hidden=$('visDont').hidden=!R.tranhLam.length;
+  const tr=$('visTraits');tr.hidden=!R.goiYTinhCach.length;tr.textContent='';
+  if(R.goiYTinhCach.length){const h=document.createElement('h3');h.textContent='Gợi ý về tính cách (cần nhiều lần chụp mới chắc)';tr.append(h);
+    for(const g of R.goiYTinhCach){const p=document.createElement('p');p.textContent=(FF[g.net]?FF[g.net].name:g.net)+': '+(g.huong==='cao'?'có thể cao':'có thể thấp')+(g.lyDo?' · '+g.lyDo:'');tr.append(p);}}
+  const saved=!!r.observationId;$('visFb').hidden=!saved;
+  if(saved){const q=$('visFbQ');q.textContent='AI đoán bé đang: ';const b=document.createElement('b');b.textContent=(CONTEXTS[R.nguCanh]||'')+' · '+(MOODS[R.camXuc]||'');q.append(b,document.createTextNode('. Đúng không?'));
+    $('visYes').hidden=$('visNo').hidden=false;$('visCtxChips').hidden=true;$('visFbNote').hidden=true;}
+  $('visResult').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function visVerdict(verdict,context){
+  const en=VS&&VS.entry;if(!en||!en.obsId)return;
+  en.verdict=verdict;if(context)en.ctx=context;else if(verdict==='wrong')en.ctx=null;save();
+  const n=$('visFbNote');n.hidden=false;n.textContent='Đang lưu…';
+  try{await api('/api/observations/'+en.obsId,{method:'PATCH',body:{verdict,context}});n.textContent=verdict==='right'?'Đã lưu. Cảm ơn bạn!':'Đã ghi nhận. Lần sau AI sẽ cân nhắc điều này.';}
+  catch(e){n.textContent='Chưa lưu được lên máy chủ, thử lại sau.';}
+  $('visYes').hidden=$('visNo').hidden=true;renderVisHist();
+}
+$('visYes').onclick=()=>visVerdict('right');
+$('visNo').onclick=()=>{
+  const box=$('visCtxChips');box.hidden=false;box.textContent='';
+  const p=document.createElement('p');p.className='vis-tip';p.textContent='Bé đang làm gì? (chọn để AI học, hoặc bỏ qua)';box.append(p);
+  for(const [k,v] of Object.entries(SHORT)){const b=document.createElement('button');b.type='button';b.className='chip ctx';b.textContent=v;b.title=CONTEXTS[k];b.onclick=()=>{box.hidden=true;visVerdict('wrong',k);};box.append(b);}
+  const sk=document.createElement('button');sk.type='button';sk.className='chip ctx';sk.textContent='Không rõ';sk.onclick=()=>{box.hidden=true;visVerdict('wrong');};box.append(sk);
+};
+$('visAsk').onclick=()=>{
+  const R=VS&&VS.res;selectTab('chat');
+  $('chatIn').value=R?'Mình vừa chụp bé, AI đọc là bé đang '+(MOODS[R.camXuc]||'').toLowerCase()+' ('+(CONTEXTS[R.nguCanh]||'').toLowerCase()+'). Mình nên làm gì thêm?':'';$('chatIn').focus();
+};
+function renderVisHist(){
+  const box=$('visHist');if(!box)return;const list=visOf(D.active).filter(v=>!(v.verdict==='wrong'&&!v.ctx));
+  box.hidden=!list.length;box.textContent='';if(!list.length)return;
+  const h=document.createElement('h3');h.textContent='Ghi nhận từ ảnh và video ('+list.length+' lần)';box.append(h);
+  const cnt={};list.forEach(v=>{cnt[v.mood]=(cnt[v.mood]||0)+1;});
+  const ch=document.createElement('div');ch.className='chips';
+  Object.entries(cnt).sort((a,b)=>b[1]-a[1]).forEach(([k,n])=>{const c=document.createElement('span');c.className='chip ctx';c.textContent=(MOODS[k]||k)+' · '+n;ch.append(c);});box.append(ch);
+  const tally={};list.forEach(v=>(v.traits||[]).forEach(g=>{const k=g.net+':'+g.huong;tally[k]=(tally[k]||0)+1;}));
+  const strong=Object.entries(tally).filter(([,n])=>n>=3).sort((a,b)=>b[1]-a[1]);
+  const p=document.createElement('p');
+  p.textContent=strong.length?'Xu hướng lặp lại: '+strong.map(([k,n])=>{const [t,d]=k.split(':');return (FF[t]?FF[t].name:t)+' '+(d==='cao'?'cao':'thấp')+' ('+n+' lần)';}).join('; ')+'. Đối chiếu với bộ câu hỏi bên dưới.'
+    :list.length<5?'Chụp thêm vài lần ở các lúc khác nhau (ăn, chơi, có khách, ngủ) để thấy rõ tính cách của bé.':'Chưa có xu hướng tính cách nào lặp lại đủ 3 lần.';
+  box.append(p);
+  const ol=document.createElement('ol');list.slice(-5).reverse().forEach(v=>{const li=document.createElement('li');const d=new Date(v.at);li.textContent=d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})+': '+(MOODS[v.mood]||'')+', '+(CONTEXTS[v.ctx]||'').toLowerCase()+(v.verdict==='right'?' ✓':v.verdict==='wrong'?' (bạn đã sửa)':'');ol.append(li);});box.append(ol);
+}
+
 // ---------------- presets ----------------
 PRESETS.forEach(p=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=p;b.onclick=()=>fromText(p);$('chips').append(b);});
 function fromText(t){const s=synthFromText(t,(Math.random()*1e9)|0);
@@ -525,6 +645,7 @@ function renderBrain(){
 // ---------------- personality tab ----------------
 let quizAns={};
 function renderPersona(){
+  renderVisHist();
   const p=D.personality[D.active];quizAns=p?{...p.answers}:{};
   const tr=$('traits');tr.textContent='';
   if(p&&p.scores){

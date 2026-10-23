@@ -1,5 +1,5 @@
 // Mèo Ngữ service worker: offline app shell + label reminders.
-const VERSION = 'meongu-v7';
+const VERSION = 'meongu-v8';
 const SHELL = ['./', './index.html', './privacy.html', './manifest.webmanifest',
   './assets/style.css', './assets/core.js', './assets/app.js', './assets/config.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/badge-96.png'];
