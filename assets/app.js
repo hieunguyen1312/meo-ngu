@@ -152,18 +152,29 @@ function guess(F,vec){
 
 // ---------------- current translation ----------------
 const S={F:null,sum:null,audio:null,pred:null,idx:0,soundId:null,labelable:false,ctx:null,out:null,srcLabel:''};
+function analyzeClip(samples,sr){const F=analyze(samples,sr);const sum=summarize(F);return {F,sum,pred:guess(F,sum.vec)};}
+function newSound(a,source,extra){
+  const s=Object.assign({id:rid(),createdAt:Date.now(),source,duration:+a.F.totalDur.toFixed(2),features:a.sum,predicted:a.pred.label,confidence:a.pred.conf,label:null,outcome:null,synced:false},extra||{});
+  soundsOf(D.active).push(s);save();return s.id;
+}
+// Load one analysed clip into the translation panel. soundId = the stored record it belongs to (if any).
+function showClip(samples,sr,srcLabel,a,soundId){
+  S.F=a.F;S.sum=a.sum;S.audio={samples,sampleRate:sr};S.srcLabel=srcLabel;S.pred=a.pred;
+  S.idx=Math.floor(Math.random()*4);S.soundId=soundId||null;S.labelable=!!soundId;
+  const s=soundId?soundsOf(D.active).find(x=>x.id===soundId):null;
+  S.ctx=(s&&s.label)||a.pred.label;S.out=(s&&s.outcome)||null;S.quickDone=s&&s.label?'hide':false;
+  $('quickNote').hidden=true;$('savedNote').hidden=!(s&&s.label);
+  renderTranslation();drawChart();renderLog();
+}
 function runAnalysis(samples,sr,srcLabel,opts){
   opts=opts||{};
-  const F=analyze(samples,sr);const sum=summarize(F);
-  S.F=F;S.sum=sum;S.audio={samples,sampleRate:sr};S.srcLabel=srcLabel;S.pred=guess(F,sum.vec);
-  S.idx=Math.floor(Math.random()*4);S.labelable=!!opts.source&&!!S.pred.label;S.soundId=null;S.ctx=S.pred.label;S.out=null;
-  if(S.labelable){
-    const s={id:rid(),createdAt:Date.now(),source:opts.source,duration:+F.totalDur.toFixed(2),features:sum,predicted:S.pred.label,confidence:S.pred.conf,label:null,outcome:null,synced:false};
-    soundsOf(D.active).push(s);S.soundId=s.id;S.quickDone=false;save();
-    pushOne(D.active).then(()=>{if(D.pushAuto&&pushReady())scheduleReminder(s.id,5,true);});
-    if(D.shareAudio&&server.audio)uploadAudio(s.id,samples,sr);
+  const a=analyzeClip(samples,sr);let id=null;
+  if(opts.source&&a.pred.label){
+    id=newSound(a,opts.source);
+    pushOne(D.active).then(()=>{if(D.pushAuto&&pushReady())scheduleReminder(id,5,true);});
+    if(D.shareAudio&&server.audio)uploadAudio(id,samples,sr);
   }
-  renderTranslation();drawChart();renderLog();
+  showClip(samples,sr,srcLabel,a,id);
 }
 async function uploadAudio(id,samples,sr){
   try{await pushSounds(D.active);await api('/api/sounds/'+id+'/audio',{method:'PUT',body:encodeWav(samples,sr,16000)});}catch(e){}
@@ -189,7 +200,7 @@ function renderTranslation(){
 function saveLabel(catId,id,ctx,out){
   const s=soundsOf(catId).find(x=>x.id===id);if(!s)return false;
   s.label=ctx;if(out!==undefined)s.outcome=out;s.synced=false;save();
-  pushOne(catId);renderBrain();renderLog();return true;
+  pushOne(catId);renderBrain();renderLog();renderBouts();return true;
 }
 function renderQuick(){
   const q=$('quick');const p=S.pred&&S.pred.label;
@@ -254,12 +265,12 @@ function drawChart(){
 // ---------------- audio playback ----------------
 let actx=null,playing=null;
 function getCtx(){if(!actx){const C=window.AudioContext||window.webkitAudioContext;actx=new C();}if(actx.state==='suspended')actx.resume();return actx;}
-function play(){
-  if(!S.audio)return;
+function playSamples(samples,sr){
   try{const c=getCtx();if(playing){try{playing.stop();}catch(e){}}
-    const b=c.createBuffer(1,S.audio.samples.length,S.audio.sampleRate);b.getChannelData(0).set(S.audio.samples);
+    const b=c.createBuffer(1,samples.length,sr);b.getChannelData(0).set(samples);
     const src=c.createBufferSource();src.buffer=b;src.connect(c.destination);src.start();playing=src;}catch(e){}
 }
+function play(){if(S.audio)playSamples(S.audio.samples,S.audio.sampleRate);}
 
 // ---------------- recorder ----------------
 const MAX=8;let rec=null,liveLevels=[];const live=$('live');
@@ -324,15 +335,89 @@ function stopRec(){
   },30);
 }
 $('recBtn').onclick=()=>{rec?stopRec():startRec();};
+// ---------------- file / video upload: split into individual meows ----------------
+const FILE_MAX_SEC=180,FILE_MAX_MB=250,BOUT_MAX=40;
+let V=null; // {file, sr, items:[{start,end,samples,a,id}], cur, skippedLong, cut}
+function fmtClock(t){const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(1).replace('.',',');}
+function fileMsg(bold,rest){const m=$('micMsg');m.hidden=false;m.textContent='';const b=document.createElement('b');b.textContent=bold;m.append(b,document.createTextNode(' '+rest));}
+function renderBouts(){
+  const box=$('bouts');if(!box)return;
+  if(V&&V.cat!==D.active)V=null;
+  if(!V||V.items.length<2){box.hidden=true;return;}
+  box.hidden=false;
+  $('boutsHead').textContent='Tìm thấy '+V.items.length+' tiếng kêu trong '+V.file;
+  const notes=[];
+  if(V.cut)notes.push('Chỉ phân tích 3 phút đầu.');
+  if(V.skippedLong)notes.push('Bỏ qua '+V.skippedLong+' đoạn âm thanh kéo dài liên tục (thường là nhạc nền hoặc tiếng người).');
+  if(V.capped)notes.push('Chỉ lấy '+BOUT_MAX+' tiếng đầu tiên.');
+  notes.push('Bấm vào từng tiếng để xem bản dịch và gắn nhãn.');
+  $('boutsNote').textContent=notes.join(' ');
+  const ol=$('boutList');ol.textContent='';
+  const list=soundsOf(D.active);
+  V.items.forEach((it,i)=>{
+    const s=list.find(x=>x.id===it.id);const lab=s&&s.label;
+    const li=document.createElement('li');if(i===V.cur)li.className='on';
+    const pb=document.createElement('button');pb.type='button';pb.className='b-play';pb.setAttribute('aria-label','Nghe tiếng thứ '+(i+1));pb.textContent='▶';
+    pb.onclick=()=>playSamples(it.samples,V.sr);
+    const sel=document.createElement('button');sel.type='button';sel.className='b-sel';sel.setAttribute('aria-current',String(i===V.cur));
+    const t=document.createElement('span');t.className='b-time';t.textContent=fmtClock(it.start);
+    const c=document.createElement('span');c.className='b-ctx';c.textContent=lab?(SHORT[lab]||CONTEXTS[lab]):(SHORT[it.a.pred.label]||'—')+'?';
+    const st=document.createElement('span');st.className='b-st'+(lab?' ok':'');st.textContent=lab?'Đã gắn nhãn':'Chưa gắn nhãn';
+    sel.append(t,c,st);sel.onclick=()=>selectBout(i,true);
+    li.append(pb,sel);ol.append(li);
+  });
+}
+function selectBout(i,scroll){
+  if(!V||!V.items[i])return;V.cur=i;const it=V.items[i];
+  showClip(it.samples,V.sr,V.kind+' '+V.file+' · tiếng '+(i+1)+'/'+V.items.length+' ở giây '+fmtClock(it.start),it.a,it.id);
+  renderBouts();
+  if(scroll&&window.matchMedia('(max-width: 860px)').matches){const p=$('tr-title');if(p)p.scrollIntoView({behavior:'smooth',block:'start'});}
+}
 $('fileIn').onchange=async e=>{
   const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
-  $('micMsg').hidden=true;$('recState').textContent='Đang đọc file…';
+  $('micMsg').hidden=true;V=null;renderBouts();
+  const done=()=>{$('recState').textContent='Bấm để thu tiếng mèo';};
+  const isVideo=/^video\//.test(f.type)||/\.(mp4|mov|m4v|webm|3gp|avi|mkv)$/i.test(f.name);
+  if(f.size>FILE_MAX_MB*1e6){fileMsg('File quá lớn ('+Math.round(f.size/1e6)+' MB).','Hãy cắt đoạn có tiếng mèo, dưới 3 phút, rồi tải lại.');return;}
+  $('recState').textContent=isVideo?'Đang tách tiếng từ video…':'Đang đọc file…';
+  let ab;
   try{
     const buf=await f.arrayBuffer();const c=getCtx();
-    const ab=await new Promise((res,rej)=>{const p=c.decodeAudioData(buf,res,rej);if(p&&p.then)p.then(res,rej);});
-    const n=Math.min(ab.length,Math.floor(ab.sampleRate*30));const ch=ab.getChannelData(0).slice(0,n);
-    runAnalysis(ch,ab.sampleRate,'File: '+f.name,{source:'upload'});$('recState').textContent='Bấm để thu tiếng mèo';
-  }catch(err){$('recState').textContent='Bấm để thu tiếng mèo';const m=$('micMsg');m.hidden=false;m.textContent='';const b=document.createElement('b');b.textContent='Không đọc được file này.';m.append(b,document.createTextNode(' Hãy thử file .wav, .mp3, .m4a hoặc video .mp4.'));}
+    ab=await new Promise((res,rej)=>{const p=c.decodeAudioData(buf,res,rej);if(p&&p.then)p.then(res,rej);});
+  }catch(err){
+    done();
+    if(isVideo)fileMsg('Không lấy được tiếng từ video này.','Có thể video không có tiếng (quay khi tắt micro, hoặc đã tắt tiếng khi chỉnh sửa), hoặc trình duyệt không đọc được định dạng. Thử video quay thẳng từ camera điện thoại.');
+    else fileMsg('Không đọc được file này.','Hãy thử file .wav, .mp3, .m4a hoặc video .mp4.');
+    return;
+  }
+  const sr=ab.sampleRate,n=Math.min(ab.length,Math.floor(sr*FILE_MAX_SEC));
+  // mix to mono so a meow on either channel counts
+  const mono=new Float32Array(n);for(let k=0;k<ab.numberOfChannels;k++){const d=ab.getChannelData(k);for(let i=0;i<n;i++)mono[i]+=d[i]/ab.numberOfChannels;}
+  let peak=0;for(let i=0;i<n;i++){const v=Math.abs(mono[i]);if(v>peak)peak=v;}
+  if(peak<1e-4){done();fileMsg(isVideo?'Video này không có tiếng.':'File này hoàn toàn im lặng.','Hãy chọn video quay lúc bé đang kêu, và kiểm tra video có tiếng khi mở bằng ứng dụng Ảnh.');return;}
+  $('recState').textContent='Đang tìm tiếng kêu…';
+  await new Promise(r=>setTimeout(r,20));
+  const all=findBouts(mono,sr);
+  const skippedLong=all.filter(b=>b.noisy).length;
+  const items=[];
+  for(const b of all){
+    if(b.noisy)continue;if(items.length>=BOUT_MAX)break;
+    const samples=mono.slice(Math.floor(b.start*sr),Math.ceil(b.end*sr));
+    const a=analyzeClip(samples,sr);if(!a.pred.label)continue;
+    const id=newSound(a,'upload',{clip:{file:f.name,start:+b.start.toFixed(2),end:+b.end.toFixed(2)}});
+    items.push({start:b.start,end:b.end,samples,a,id});
+  }
+  done();
+  if(!items.length){
+    if(skippedLong)fileMsg('Không tách được tiếng mèo.','Video có âm thanh liên tục (nhạc nền, tiếng nói, quạt, TV) nên app không nhận ra từng tiếng kêu. Hãy dùng video quay thô, không chèn nhạc, phòng yên tĩnh.');
+    else fileMsg('Không nghe thấy tiếng mèo nào.','Tiếng kêu có thể quá nhỏ so với tiếng ồn. Thử quay gần bé hơn.');
+    return;
+  }
+  V={file:f.name,kind:isVideo?'Video':'File',cat:D.active,sr,items,cur:0,skippedLong,cut:ab.length>n,capped:all.filter(b=>!b.noisy).length>BOUT_MAX};
+  pushOne(D.active); // no auto reminder: the owner is looking at the video right now
+  if(D.shareAudio&&server.audio)(async()=>{for(const it of items)await uploadAudio(it.id,it.samples,sr);})();
+  if(items.length===1){const it=items[0];showClip(it.samples,sr,V.kind+' '+f.name+' · giây '+fmtClock(it.start),it.a,it.id);renderBouts();}
+  else selectBout(0,false);
 };
 
 // ---------------- presets ----------------
@@ -517,7 +602,7 @@ function renderPending(){
   for(const s of list){
     const li=document.createElement('li');li.dataset.id=s.id;
     const top=document.createElement('div');top.className='p-top';const d=new Date(s.createdAt);
-    const a=document.createElement('b');a.textContent=d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})+' lúc '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+    const a=document.createElement('b');a.textContent=s.clip?s.clip.file+' · giây '+fmtClock(s.clip.start):d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})+' lúc '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
     const g=document.createElement('span');g.textContent='App đoán: '+(SHORT[s.predicted]||'—');top.append(a,g);
     const ch=document.createElement('div');ch.className='chips';
     for(const [k,v] of Object.entries(SHORT)){const b=document.createElement('button');b.type='button';b.className='chip ctx';b.textContent=v;b.title=CONTEXTS[k];
@@ -652,7 +737,7 @@ TABS.forEach(t=>$('tab-'+t).onclick=()=>selectTab(t));
 $('tabs').addEventListener('keydown',e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;const cur=TABS.findIndex(t=>$('tab-'+t).getAttribute('aria-selected')==='true');const n=(cur+(e.key==='ArrowRight'?1:-1)+TABS.length)%TABS.length;selectTab(TABS[n]);$('tab-'+TABS[n]).focus();});
 
 function renderAll(){
-  renderCats();renderBrain();renderLog();renderSettings();
+  renderCats();renderBrain();renderLog();renderSettings();renderBouts();
   const cur=TABS.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
   if(cur==='persona')renderPersona();if(cur==='chat')renderChat();
   if(S.F){S.pred=guess(S.F,S.sum.vec);renderTranslation();}

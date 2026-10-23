@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=6">
+<link rel="stylesheet" href="assets/style.css?v=7">
 </head>
 <body>
 <div class="wrap">
@@ -59,7 +59,12 @@
       <div class="upload">
         <label class="btn sm" for="fileIn">Tải file âm thanh/video</label>
         <input id="fileIn" type="file" accept="audio/*,video/*" hidden>
-        <span>Phân tích tối đa 30 giây đầu.</span>
+        <span>Video tới 3 phút. App tự tách từng tiếng kêu.</span>
+      </div>
+      <div class="bouts" id="bouts" hidden>
+        <h3 id="boutsHead">—</h3>
+        <p id="boutsNote"></p>
+        <ol id="boutList"></ol>
       </div>
       <div class="sep">hoặc thử nhanh</div>
       <div class="chips" id="chips"></div>
@@ -253,8 +258,8 @@
   </form>
 </div>
 
-<script src="assets/config.js?v=6"></script>
-<script src="assets/core.js?v=6"></script>
-<script src="assets/app.js?v=6"></script>
+<script src="assets/config.js?v=7"></script>
+<script src="assets/core.js?v=7"></script>
+<script src="assets/app.js?v=7"></script>
 </body>
 </html>

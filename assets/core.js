@@ -295,4 +295,23 @@ function encodeWav(samples,srIn,srOut){
   return new Blob([buf],{type:'audio/wav'});
 }
 
-if(typeof module!=='undefined')module.exports={synthFromText,analyze,classify,parseMeoText,SR,featureVector,summarize,buildModel,predict,looAccuracy,FEATURE_NAMES};
+// Find separate vocal "bouts" in a long recording (e.g. a video soundtrack) using energy only,
+// so it stays fast on minutes of audio. Returns [{start,end}] in seconds plus a noisy flag
+// for very long stretches (often music or people talking).
+function findBouts(samples,sr,opts){
+  opts=opts||{};
+  const {x,sr:r}=toAnalysisRate(samples,sr);
+  const N=Math.round(0.04*r),hop=Math.round(0.01*r),rms=[];
+  for(let s=0;s+N<=x.length;s+=hop){let e=0;for(let i=0;i<N;i++)e+=x[s+i]*x[s+i];rms.push(Math.sqrt(e/N));}
+  if(!rms.length)return [];
+  const sorted=[...rms].sort((a,b)=>a-b);
+  const floor=sorted[Math.floor(sorted.length*0.2)]||0,p99=sorted[Math.floor(sorted.length*0.99)]||0;
+  const thr=Math.max(0.004,floor*4,p99*0.03);
+  const maxGap=opts.maxGap||0.35,minDur=opts.minDur||0.12,pad=0.1,longDur=opts.longDur||8;
+  const out=[];let cur=null;
+  rms.forEach((v,i)=>{const t=i*0.01;if(v>thr){if(cur&&t-cur.end<=maxGap)cur.end=t+0.04;else{cur={start:t,end:t+0.04};out.push(cur);}}});
+  const dur=x.length/r;
+  return out.filter(b=>b.end-b.start>=minDur).map(b=>({start:Math.max(0,b.start-pad),end:Math.min(dur,b.end+pad),noisy:b.end-b.start>longDur}));
+}
+
+if(typeof module!=='undefined')module.exports={findBouts,synthFromText,analyze,classify,parseMeoText,SR,featureVector,summarize,buildModel,predict,looAccuracy,FEATURE_NAMES};
