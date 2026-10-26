@@ -23,6 +23,7 @@ export default {
   // Cron (every minute): send due "label this meow" reminders.
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runReminders(env));
+    if (new Date(event.scheduledTime).getUTCMinutes() === 7) ctx.waitUntil(pruneGame(env).catch(e => console.error('pruneGame', e)));
   },
 };
 
@@ -89,6 +90,9 @@ async function route(req, env, ctx) {
 
   if (p === '/api/health') return json({ ok: true, agent: providerChain(env).length > 0, providers: providerChain(env), audio: !!env.AUDIO });
   if (p === '/api/meta') return json({ contexts: CONTEXTS, outcomes: OUTCOMES, felineFive: FELINE_FIVE });
+  // Game Chín Kiếp: anonymous play analytics (no device token, no user row).
+  if (p === '/api/game/events' && M === 'POST') return gameEvents(req, env);
+  if (p === '/api/game/stats' && M === 'GET') return gameStats(env, url);
 
   await ensurePushSchema(env);
   const user = await auth(req, env);
@@ -565,6 +569,64 @@ async function agent(req, env, user) {
   return json({ reply, provider: used, savedObservations: saved, callsLeft: Math.max(0, limit(env) - calls - 1) });
 }
 
+
+// ---------- game Chín Kiếp analytics ----------
+// Anonymous: a random play id made in the browser, event names and small props.
+// No IP, no device token, no audio. Rows older than GAME_RETENTION_DAYS are pruned hourly.
+const GAME_EVENT_RE = /^[a-z0-9_]{1,40}$/;
+const GAME_SID_RE = /^[A-Za-z0-9_-]{8,64}$/;
+const GAME_FUNNEL = ['open', 'start', 'quest_done:sniff', 'quest_done:an', 'quest_done:day', 'quest_done:lu', 'quest_done:ba', 'quest_done:cong', 'chapter_complete', 'cta_click'];
+let gameSchema = null;
+function ensureGameSchema(env) {
+  if (!gameSchema) gameSchema = env.DB.batch([
+    env.DB.prepare('CREATE TABLE IF NOT EXISTS game_events (id INTEGER PRIMARY KEY AUTOINCREMENT, sid TEXT NOT NULL, name TEXT NOT NULL, step TEXT, props TEXT, ts INTEGER NOT NULL, created_at INTEGER NOT NULL, country TEXT, v TEXT)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_game_name ON game_events(name, created_at)'),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_game_created ON game_events(created_at)'),
+  ]).catch(e => { gameSchema = null; throw e; });
+  return gameSchema;
+}
+async function gameEvents(req, env) {
+  const origin = req.headers.get('origin') || '';
+  const allowed = (env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!allowed.includes(origin) && !allowed.includes('*')) throw new HttpError(403, 'forbidden', 'Nguồn gửi không được phép.');
+  const body = await readJson(req, 32 * 1024);
+  const sid = typeof body.sid === 'string' && GAME_SID_RE.test(body.sid) ? body.sid : null;
+  if (!sid || !Array.isArray(body.events)) throw bad('Thiếu sid hoặc events.');
+  const v = str(body.v, 20, 'v');
+  const country = (req.cf && req.cf.country) || null;
+  const t = now();
+  const rows = [];
+  for (const e of body.events.slice(0, 60)) {
+    if (!e || typeof e.n !== 'string' || !GAME_EVENT_RE.test(e.n)) continue;
+    const props = e.p && typeof e.p === 'object' ? JSON.stringify(e.p).slice(0, 400) : null;
+    const step = e.p && typeof e.p.id === 'string' ? e.p.id.slice(0, 24) : null;
+    const ts = Number.isFinite(e.t) ? Math.round(e.t) : t;
+    rows.push(env.DB.prepare('INSERT INTO game_events (sid, name, step, props, ts, created_at, country, v) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(sid, e.n, step, props, ts, t, country, v));
+  }
+  if (!rows.length) return json({ ok: true, stored: 0 });
+  await ensureGameSchema(env);
+  await env.DB.batch(rows);
+  return json({ ok: true, stored: rows.length }, 201);
+}
+async function gameStats(env, url) {
+  if (env.GAME_STATS_KEY && url.searchParams.get('key') !== env.GAME_STATS_KEY) throw new HttpError(401, 'unauthorized', 'Sai khoá xem số liệu.');
+  await ensureGameSchema(env);
+  const days = Math.min(365, Math.max(1, Number(url.searchParams.get('days')) || 30));
+  const since = now() - days * 86400000;
+  const r = await env.DB.prepare(`SELECT CASE WHEN name = 'quest_done' THEN 'quest_done:' || step ELSE name END AS k,
+      COUNT(*) AS events, COUNT(DISTINCT sid) AS players
+      FROM game_events WHERE created_at > ? GROUP BY k ORDER BY players DESC`).bind(since).all();
+  const by = Object.fromEntries(r.results.map(x => [x.k, x]));
+  const base = (by.open && by.open.players) || 0;
+  const funnel = GAME_FUNNEL.map(k => ({ step: k, players: (by[k] && by[k].players) || 0, pctOfOpen: base ? Math.round(((by[k] && by[k].players) || 0) / base * 1000) / 10 : null }));
+  return json({ days, funnel, all: r.results });
+}
+async function pruneGame(env) {
+  await ensureGameSchema(env);
+  const days = Number(env.GAME_RETENTION_DAYS) || 180;
+  await env.DB.prepare('DELETE FROM game_events WHERE created_at < ?').bind(now() - days * 86400000).run();
+}
 
 // ---------- reminders ----------
 // The push tables are created by the Worker itself (idempotent, once per isolate),

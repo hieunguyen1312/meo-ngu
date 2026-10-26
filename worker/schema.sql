@@ -101,3 +101,18 @@ CREATE TABLE IF NOT EXISTS reminders (
   sent_at     INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_rem_due ON reminders(sent_at, due_at);
+
+-- Game Chín Kiếp (/game/): anonymous play analytics. The Worker also creates this itself on first use.
+CREATE TABLE IF NOT EXISTS game_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sid TEXT NOT NULL,          -- random play id made in the browser, not tied to users
+  name TEXT NOT NULL,         -- event name, e.g. start, quest_done, chapter_complete
+  step TEXT,                  -- quest / item id when the event has one
+  props TEXT,                 -- small JSON
+  ts INTEGER NOT NULL,        -- client time (ms)
+  created_at INTEGER NOT NULL,
+  country TEXT,
+  v TEXT                      -- game build
+);
+CREATE INDEX IF NOT EXISTS idx_game_name ON game_events(name, created_at);
+CREATE INDEX IF NOT EXISTS idx_game_created ON game_events(created_at);
