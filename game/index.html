@@ -62,11 +62,22 @@ body:not(.touch) .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 60px)}
 #mnIntent{margin-left:auto;color:var(--rust)}
 .mn-text{font:18px/1.3 var(--f-display);margin-top:3px}
 .mn-ctx{font:600 11px var(--f-ui);color:#6a5e80;margin-top:3px}
-.pick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
-.pk{background:var(--panel-2);border:1.5px solid var(--line);border-radius:14px;padding:8px 8px 10px;color:var(--ink);text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
-.pk canvas{width:100%;height:auto;aspect-ratio:3/2;max-width:100%;display:block;border-radius:9px;background:#151a3c;margin-bottom:4px}
-.pk b{font:400 22px/1.1 var(--f-display)}
-.pk small{font:500 12px/1.35 var(--f-ui);color:var(--muted)}
+.pick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.pk{background:var(--panel-2);border:1.5px solid var(--line);border-radius:12px;padding:5px 5px 6px;color:var(--ink);text-align:left;display:flex;flex-direction:column;gap:1px;min-width:0}
+.pk canvas{width:100%;height:auto;aspect-ratio:3/2;max-width:100%;display:block;border-radius:8px;background:#151a3c;margin-bottom:3px}
+.pk b{font:400 17px/1.1 var(--f-display);padding-left:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk small{font:600 10.5px/1.2 var(--f-ui);color:var(--muted);padding-left:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.perk{font:500 13.5px/1.45 var(--f-ui)!important;color:var(--ink)!important;background:rgba(243,163,60,.1);border:1px solid rgba(243,163,60,.3);border-radius:10px;padding:8px 11px;margin:10px 0 0!important}
+.perk b{color:var(--lamp)}
+.mix{margin-top:10px;display:grid;gap:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.mix-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.mix label{display:flex;flex-direction:column;gap:4px;font:600 11px var(--f-ui);color:var(--muted);min-width:0}
+.mix input[type=color]{width:100%;height:34px;border:1.5px solid var(--line);border-radius:8px;padding:0;background:transparent;cursor:pointer}
+.mix input[type=text]{width:100%;font:500 15px var(--f-ui);color:var(--ink);background:var(--night);border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;-webkit-user-select:text;user-select:text}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;font:600 12.5px var(--f-ui);color:var(--muted);background:var(--night);border:1.5px solid var(--line);border-radius:999px;padding:7px 10px}
+.seg button[aria-pressed="true"]{color:#1a1206;background:var(--lamp);border-color:transparent}
+@media (max-width:360px){.mix-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .pk[aria-checked="true"]{border-color:var(--lamp);box-shadow:0 0 0 2px rgba(243,163,60,.25)}
 .pk-label{font:700 11px var(--f-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:14px}
 @keyframes drop{from{transform:translate(-50%,-12px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
@@ -216,8 +227,29 @@ body.touch .keys{display:none}
     <p>Bạn là con mèo lạc chủ trong đêm hẻm bị giải tỏa. Leo nhà ống, đánh hơi tìm dấu bà, meo đúng ý để người trong hẻm giúp mình.</p>
     <div class="pk-label" id="pkLabel">Chọn mèo</div>
     <div class="pick" role="radiogroup" aria-labelledby="pkLabel">
-      <button class="pk" role="radio" aria-checked="true" data-cat="muop" id="pkMuop"><canvas width="240" height="160" aria-hidden="true"></canvas><b>Mướp</b><small>Mèo mướp. Mũi thính: đánh hơi lâu hơn 2 giây.</small></button>
-      <button class="pk" role="radio" aria-checked="false" data-cat="mun" id="pkMun"><canvas width="240" height="160" aria-hidden="true"></canvas><b>Mun</b><small>Mèo mun đen. Hoà vào bóng đêm: chó Lu nhìn thấy gần hơn.</small></button>
+      <button class="pk" role="radio" aria-checked="true" data-cat="muop" id="pkMuop"><canvas width="180" height="120" aria-hidden="true"></canvas><b>Mướp</b><small>Mèo mướp</small></button>
+      <button class="pk" role="radio" aria-checked="false" data-cat="mun" id="pkMun"><canvas width="180" height="120" aria-hidden="true"></canvas><b>Mun</b><small>Mèo mun đen</small></button>
+      <button class="pk" role="radio" aria-checked="false" data-cat="tam" id="pkTam"><canvas width="180" height="120" aria-hidden="true"></canvas><b>Tam</b><small>Mèo tam thể</small></button>
+      <button class="pk" role="radio" aria-checked="false" data-cat="cam" id="pkCam"><canvas width="180" height="120" aria-hidden="true"></canvas><b>Cam</b><small>Mèo cam</small></button>
+      <button class="pk" role="radio" aria-checked="false" data-cat="bao" id="pkBao"><canvas width="180" height="120" aria-hidden="true"></canvas><b>Báo</b><small>Vằn châu Phi</small></button>
+      <button class="pk" role="radio" aria-checked="false" data-cat="custom" id="pkCustom"><canvas width="180" height="120" aria-hidden="true"></canvas><b id="pkCustomName">Bông</b><small>Tự pha màu</small></button>
+    </div>
+    <p class="perk" id="perkText"></p>
+    <div class="mix" id="mixPanel" hidden>
+      <label for="mixName">Tên mèo<input type="text" id="mixName" maxlength="14" value="Bông" autocomplete="off"></label>
+      <div class="mix-row">
+        <label for="mixFur">Lông<input type="color" id="mixFur" value="#c9c3d6"></label>
+        <label for="mixPat">Hoa văn<input type="color" id="mixPat" value="#6b5a8a"></label>
+        <label for="mixAlt">Mảng 2<input type="color" id="mixAlt" value="#e8b04a"></label>
+        <label for="mixBelly">Bụng<input type="color" id="mixBelly" value="#f4eee6"></label>
+        <label for="mixEye">Mắt<input type="color" id="mixEye" value="#7fd3e8"></label>
+      </div>
+      <div class="seg" role="group" aria-label="Kiểu lông" id="mixPattern">
+        <button type="button" data-p="solid" aria-pressed="false">Trơn</button>
+        <button type="button" data-p="tabby" aria-pressed="true">Vằn</button>
+        <button type="button" data-p="spots" aria-pressed="false">Đốm</button>
+        <button type="button" data-p="calico" aria-pressed="false">Ba màu</button>
+      </div>
     </div>
     <div class="row">
       <button class="primary" id="btnStart">Bắt đầu</button>
@@ -411,11 +443,49 @@ const MEMORIES = [
   ['Tết năm ngoái',  'Bà mặc áo bà ba đỏ, cột cho Mướp cái nơ đỏ. Mướp cào rách trong năm phút. Bà cười chảy nước mắt.'],
   ['Tờ giấy giải tỏa','Ông tổ trưởng đưa tờ giấy. Bà ngồi im cả buổi chiều, tay cứ vuốt lưng Mướp.'],
 ];
-const MEMORY1_MUN = 'Bà Tư nhặt Mun trong cái thùng giấy ướt mưa ở đầu hẻm. Người ta chê mèo đen xui. Bà nói “đen như gỗ mun, quý lắm”, nên đặt tên Mun.';
+/* ---------- mèo: bộ lông, hoa văn, tài riêng ---------- */
+const hex2rgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const rgb2hex = a => '#' + a.map(v => Math.round(clamp(v, 0, 255)).toString(16).padStart(2, '0')).join('');
+const mixC = (a, b, k) => { const A = hex2rgb(a), B = hex2rgb(b); return rgb2hex(A.map((v, i) => v + (B[i] - v)*k)); };
+const shade = (h, k) => mixC(h, k < 0 ? '#000000' : '#ffffff', Math.abs(k));
+const lumC = h => { const [r, g, b] = hex2rgb(h); return (0.2126*r + 0.7152*g + 0.0722*b)/255; };
 const CATS = {
-  muop: { name:'Mướp', fur:'#8f7f69', dark:'#4b4033', belly:'#eadcc0', ear:'#c98d86', nose:'#d98b8b', eye:'#dbe56a', stripes:true,  rim:false },
-  mun:  { name:'Mun',  fur:'#2c2834', dark:'#16141c', belly:'#3a3545', ear:'#5e3f4c', nose:'#8a6474', eye:'#f2c94c', stripes:false, rim:true },
+  muop: { name:'Mướp', label:'Mèo mướp', fur:'#8f7f69', stripe:'#4b4033', belly:'#eadcc0', legs:'#4b4033', tailA:'#4b4033', tailB:'#8f7f69', ear:'#c98d86', nose:'#d98b8b', eye:'#dbe56a', pattern:'tabby',
+    perk:'Mũi thính: đánh hơi lâu hơn 2 giây.',
+    mem1:'Bà Tư nhặt Mướp trong cái thùng giấy ướt mưa ở đầu hẻm. Bà đặt tên Mướp, vì “như trái mướp ngoài giàn, xấu mà thương”.' },
+  mun:  { name:'Mun', label:'Mèo mun đen', fur:'#2c2834', stripe:'#16141c', belly:'#3a3545', legs:'#16141c', tailA:'#16141c', tailB:'#2c2834', ear:'#5e3f4c', nose:'#8a6474', eye:'#f2c94c', pattern:'solid', rim:true,
+    perk:'Hoà vào bóng đêm: chó Lu chỉ thấy khi đến gần hơn.',
+    mem1:'Bà Tư nhặt Mun trong cái thùng giấy ướt mưa ở đầu hẻm. Người ta chê mèo đen xui. Bà nói “đen như gỗ mun, quý lắm”, nên đặt tên Mun.',
+    xoi:'Mèo mun hả? Người ta kiêng chứ cô hổng kiêng. Lấy miếng chả nè.' },
+  tam:  { name:'Tam', label:'Mèo tam thể', fur:'#f3ede2', stripe:'#2a2528', p1:'#d9822f', p2:'#2a2528', belly:'#fbf7ef', legs:'#e4dacb', tailA:'#2a2528', tailB:'#d9822f', ear:'#e9a8a4', nose:'#e39a9a', eye:'#e6c34a', pattern:'calico', ear1:'#d9822f', ear2:'#2a2528',
+    perk:'Mèo mang lộc: lần đầu gặp nạn không mất kiếp.',
+    mem1:'Bà Tư nhặt Tam trong cái thùng giấy ướt mưa ở đầu hẻm. Bà nói mèo tam thể mang lộc, cưng như vàng, đặt tên Tam.',
+    xoi:'Mèo tam thể! Mèo mang lộc vô sạp cô nè. Lấy miếng xôi đi con.' },
+  cam:  { name:'Cam', label:'Mèo cam', fur:'#e08a3c', stripe:'#b0561c', belly:'#f6dcb4', legs:'#c06a28', tailA:'#b0561c', tailB:'#e08a3c', ear:'#f0a39a', nose:'#e78f8f', eye:'#a6d66a', pattern:'tabby',
+    perk:'Chân lanh: chạy nhanh hơn một chút.',
+    mem1:'Bà Tư nhặt Cam trong cái thùng giấy ướt mưa ở đầu hẻm. Lông cam như trái quýt chín. Bà đặt tên Cam, rồi cười: “con này ăn như hạm”.',
+    xoi:'Lại là con mèo cam ham ăn! Nè, chả lụa nè.' },
+  bao:  { name:'Báo', label:'Mèo vằn châu Phi', fur:'#d7ae63', stripe:'#2d241a', belly:'#f3e4c4', legs:'#b38a48', tailA:'#2d241a', tailB:'#d7ae63', ear:'#c9917a', nose:'#b8745e', eye:'#e8d24a', pattern:'spots', bigEars:true,
+    perk:'Chân dài: nhảy cao hơn một chút.',
+    mem1:'Bà Tư nhặt Báo trong cái thùng giấy ướt mưa ở đầu hẻm. Chân dài, lông đốm vằn như con báo nhỏ. Bà đặt tên Báo, mà nó nhát như thỏ đế.',
+    xoi:'Trời, mèo gì mà như con báo con. Ăn miếng chả cho mập nè.' },
 };
+const MIX_DEFAULT = { name:'Bông', fur:'#c9c3d6', pat:'#6b5a8a', alt:'#e8b04a', belly:'#f4eee6', eye:'#7fd3e8', pattern:'tabby' };
+let MIX = Object.assign({}, MIX_DEFAULT);
+try { const m = JSON.parse(localStorage.getItem('chinkiep.mix') || 'null'); if (m && typeof m === 'object') MIX = Object.assign({}, MIX_DEFAULT, m); } catch(e){}
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+function cleanMix(m){ const o = Object.assign({}, MIX_DEFAULT);
+  for (const k of ['fur','pat','alt','belly','eye']) if (typeof m[k] === 'string' && HEX_RE.test(m[k])) o[k] = m[k].toLowerCase();
+  if (['solid','tabby','spots','calico'].includes(m.pattern)) o.pattern = m.pattern;
+  const nm = typeof m.name === 'string' ? m.name.replace(/[<>&"]/g, '').trim().slice(0, 14) : ''; o.name = nm || MIX_DEFAULT.name; return o; }
+function customSpec(m){ m = cleanMix(m || MIX);
+  return { name:m.name, label:'Tự pha màu', fur:m.fur, stripe:m.pat, p1:m.pat, p2:m.alt, belly:m.belly, eye:m.eye, pattern:m.pattern,
+    legs: shade(m.fur, -.2), tailA: m.pattern === 'solid' ? shade(m.fur, -.3) : m.pat, tailB: m.pattern === 'calico' ? m.alt : m.fur,
+    ear: mixC(m.fur, '#e8a0a0', .55), nose:'#d98b8b', rim: lumC(m.fur) < .14, ear1: m.pattern === 'calico' ? m.pat : null, ear2: m.pattern === 'calico' ? m.alt : null,
+    perk:'Không có tài riêng, chỉ có bộ lông có một không hai.',
+    mem1:`Bà Tư nhặt ${m.name} trong cái thùng giấy ướt mưa ở đầu hẻm. Bà ngắm bộ lông lạ hoắc của nó một hồi lâu, rồi đặt tên ${m.name}.` }; }
+const catSpec = k => k === 'custom' ? customSpec(MIX) : (CATS[k] || CATS.muop);
+const KINDS = ['muop','mun','tam','cam','bao','custom'];
 let CAT_NAME = 'Mướp';
 const N = s => typeof s === 'string' ? s.replace(/Mướp/g, CAT_NAME) : s;
 const LAST_MEMORY = ['Kiếp thứ mười', 'Mướp mệt lả. Trong mơ, bà Tư gọi: “Mướp ơi, về ăn cơm.” Mướp mở mắt. Chín kiếp đã trở về.'];
@@ -455,7 +525,7 @@ let scale = 1, vw = 400, vh = 700, DPR = 1;
 
 function freshState(){
   Object.assign(st, { mode:'title', kiep:9, found:{}, understood:{}, qs:{}, khan:false, gateOpen:false, gateT:0, cp:'nha', time:0, deaths:0,
-    xoi:false, noFail:!!(st.noFail), sound: st.sound !== false, kind: st.kind || 'muop', ended:false, sniffT:0, wp:0, flags:{}, bikeT:0, cut2:false, musicT:3, endShown:false });
+    xoi:false, noFail:!!(st.noFail), sound: st.sound !== false, kind: st.kind || 'muop', luckUsed:false, ended:false, sniffT:0, wp:0, flags:{}, bikeT:0, cut2:false, musicT:3, endShown:false });
   NPC.an1.gone = false;
   gate.off = false;
   bubbles = []; shards = []; cupFall = null; lizard = null;
@@ -467,13 +537,17 @@ freshState();
 
 const tomo = () => Object.keys(st.found).length;
 const lvl = () => 1 + Math.floor(tomo()/3);
-const jumpV = () => JUMP * (1 + 0.035*(lvl()-1));
+const jumpV = () => JUMP * (1 + 0.035*(lvl()-1)) * (st.kind === 'bao' ? 1.07 : 1);
+const runSpeed = () => RUN * (st.kind === 'cam' ? 1.1 : 1);
 
 /* ---------- save ---------- */
 const SAVE_KEY = 'chinkiep.ch1.v1';
 function snapshot(){ return { v:1, kiep:st.kiep, found:st.found, understood:st.understood, qs:st.qs, khan:st.khan, gateOpen:st.gateOpen, cp:st.cp, time:st.time,
-  deaths:st.deaths, xoi:st.xoi, noFail:st.noFail, an1Gone:!!NPC.an1.gone, flags:st.flags, ended:st.ended, kind:st.kind }; }
-function setKind(k){ st.kind = CATS[k] ? k : 'muop'; CAT_NAME = CATS[st.kind].name;
+  deaths:st.deaths, xoi:st.xoi, noFail:st.noFail, an1Gone:!!NPC.an1.gone, flags:st.flags, ended:st.ended, kind:st.kind, mix: st.kind === 'custom' ? MIX : null, luckUsed: st.luckUsed }; }
+function setKind(k){ st.kind = KINDS.includes(k) ? k : 'muop'; const sp = catSpec(st.kind); CAT_NAME = sp.name;
+  const pt = $('perkText'); if (pt) pt.innerHTML = `<b>${sp.name}</b> · ${sp.label}. ${sp.perk}`;
+  const mp = $('mixPanel'); if (mp) mp.hidden = st.kind !== 'custom';
+  const cn = $('pkCustomName'); if (cn) cn.textContent = cleanMix(MIX).name;
   document.querySelectorAll('.pk').forEach(b => b.setAttribute('aria-checked', String(b.dataset.cat === st.kind)));
   document.querySelectorAll('.nm').forEach(e => e.textContent = CAT_NAME); }
 function saveGame(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot())); } catch(e){} }
@@ -483,6 +557,8 @@ function restore(s){
   freshState();
   Object.assign(st, { kiep:s.kiep||9, found:s.found||{}, understood:s.understood||{}, qs:s.qs||{}, khan:!!s.khan, gateOpen:!!s.gateOpen, cp:s.cp||'nha',
     time:s.time||0, deaths:s.deaths||0, xoi:!!s.xoi, noFail:!!s.noFail, flags:s.flags||{} });
+  if (s.kind === 'custom' && s.mix) MIX = cleanMix(s.mix);
+  st.luckUsed = !!s.luckUsed;
   setKind(s.kind || 'muop');
   NPC.an1.gone = !!s.an1Gone;
   if (st.gateOpen){ gate.off = true; st.gateT = 1; }
@@ -737,7 +813,7 @@ function respond(who, intent){
     if ((intent === 'an' || intent === 'nung') && !st.xoi){
       learn(intent); st.xoi = true;
       const gain = st.kiep < 9; if (gain) st.kiep++;
-      bubble(x, y, st.kind === 'mun' ? 'Mèo mun hả? Người ta kiêng chứ cô hổng kiêng. Lấy miếng chả nè.' : (intent === 'an' ? 'Đói hả? Nè, cô cho miếng chả lụa.' : 'Trời ơi, cưng quá! Lấy miếng xôi nè.'), 'bay', 3.6);
+      bubble(x, y, catSpec(st.kind).xoi ? catSpec(st.kind).xoi : (intent === 'an' ? 'Đói hả? Nè, cô cho miếng chả lụa.' : 'Trời ơi, cưng quá! Lấy miếng xôi nè.'), 'bay', 3.6);
       sfxTone([523.25, 659.25, 783.99], .35, 'triangle', .08, .08); track('xoi', { intent });
       setTimeout(() => toast(gain ? 'Ăn no rồi. Mướp thấy mình sống thêm được một kiếp.' : 'Ăn no rồi. Mướp liếm mép, khoái chí.', 3200), 600);
       updateHUD(); saveGame();
@@ -764,15 +840,17 @@ function loseKiep(reason){
   st.deaths++; track('kiep_lost', { reason, deaths: st.deaths });
   sfxNoise(.35, 400, 'lowpass', .25);
   let mem, reset = false;
-  if (!st.noFail) st.kiep = Math.max(0, st.kiep - 1);
+  const lucky = !st.noFail && st.kind === 'tam' && !st.luckUsed;
+  if (lucky) st.luckUsed = true;
+  if (!st.noFail && !lucky) st.kiep = Math.max(0, st.kiep - 1);
   if (st.kiep === 0){ mem = LAST_MEMORY; reset = true; }
   else mem = MEMORIES[(st.deaths - 1) % MEMORIES.length];
   const idx = reset ? 9 : ((st.deaths - 1) % MEMORIES.length) + 1;
-  $('mEyebrow').textContent = st.noFail ? 'Chế độ thư giãn · không mất kiếp' : (reset ? 'Hết kiếp' : `Mất một kiếp · còn ${st.kiep}/9`);
+  $('mEyebrow').textContent = st.noFail ? 'Chế độ thư giãn · không mất kiếp' : lucky ? 'Lộc mèo tam thể · lần này không mất kiếp' : (reset ? 'Hết kiếp' : `Mất một kiếp · còn ${st.kiep}/9`);
   $('mPaws').innerHTML = pawsHTML(st.kiep);
   $('mReason').textContent = N(REASONS[reason]);
   $('mTitle').textContent = `Ký ức ${idx} · ${mem[0]}`;
-  $('mText').textContent = (idx === 1 && st.kind === 'mun') ? MEMORY1_MUN : N(mem[1]);
+  $('mText').textContent = idx === 1 ? catSpec(st.kind).mem1 : N(mem[1]);
   $('mBtn').textContent = CAT_NAME + ' đứng dậy';
   if (reset) st.kiep = 9;
   st.mode = 'memory'; K.left = K.right = false;
@@ -853,15 +931,23 @@ $('optSound').addEventListener('change', e => { st.sound = e.target.checked; });
 $('optNoFail2').addEventListener('change', e => { st.noFail = e.target.checked; saveGame(); });
 $('optStats').addEventListener('change', e => { if (!e.target.checked) track('stats_off'), flush(); statsOn = e.target.checked; lsSet('chinkiep.stats', statsOn ? '1' : '0'); });
 document.querySelectorAll('.pk').forEach(b => b.addEventListener('click', () => { setKind(b.dataset.cat); lsSet('chinkiep.kind', st.kind); drawPreviews(); }));
+function syncMixUI(){ const m = cleanMix(MIX); $('mixName').value = m.name; $('mixFur').value = m.fur; $('mixPat').value = m.pat; $('mixAlt').value = m.alt; $('mixBelly').value = m.belly; $('mixEye').value = m.eye;
+  document.querySelectorAll('#mixPattern button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === m.pattern))); $('mixAlt').parentElement.style.opacity = m.pattern === 'calico' ? '1' : '.45'; }
+function onMix(){ MIX = cleanMix({ name:$('mixName').value, fur:$('mixFur').value, pat:$('mixPat').value, alt:$('mixAlt').value, belly:$('mixBelly').value, eye:$('mixEye').value, pattern:MIX.pattern });
+  lsSet('chinkiep.mix', JSON.stringify(MIX)); $('mixAlt').parentElement.style.opacity = MIX.pattern === 'calico' ? '1' : '.45'; setKind('custom'); drawPreviews(); }
+['mixFur','mixPat','mixAlt','mixBelly','mixEye','mixName'].forEach(id => $(id).addEventListener('input', onMix));
+$('mixName').addEventListener('keydown', e => e.stopPropagation());
+document.querySelectorAll('#mixPattern button').forEach(b => b.addEventListener('click', () => { MIX.pattern = b.dataset.p;
+  document.querySelectorAll('#mixPattern button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); onMix(); }));
 function drawPreviews(){
   document.querySelectorAll('.pk').forEach(b => {
     const c = b.querySelector('canvas'); const g = c.getContext('2d'); const old = ctx; ctx = g;
     try {
       g.setTransform(1,0,0,1,0,0); g.clearRect(0, 0, c.width, c.height);
       const gr = g.createLinearGradient(0, 0, 0, c.height); gr.addColorStop(0, '#1d2558'); gr.addColorStop(1, '#3d3470'); g.fillStyle = gr; g.fillRect(0, 0, c.width, c.height);
-      const lg = g.createRadialGradient(120, 100, 0, 120, 100, 110); lg.addColorStop(0, 'rgba(243,163,60,.35)'); lg.addColorStop(1, 'rgba(243,163,60,0)'); g.fillStyle = lg; g.fillRect(0, 0, c.width, c.height);
-      g.fillStyle = '#121633'; g.fillRect(0, 132, c.width, 28);
-      g.translate(124, 132); g.scale(2.4, 2.4);
+      const lg = g.createRadialGradient(c.width/2, c.height*.62, 0, c.width/2, c.height*.62, c.width*.46); lg.addColorStop(0, 'rgba(243,163,60,.35)'); lg.addColorStop(1, 'rgba(243,163,60,0)'); g.fillStyle = lg; g.fillRect(0, 0, c.width, c.height);
+      g.fillStyle = '#121633'; g.fillRect(0, c.height*.83, c.width, c.height);
+      g.translate(c.width*.52, c.height*.83); g.scale(c.width/100, c.width/100);
       drawCat({ x:-22, y:-30, w:44, h:30, face:1, onGround:true, vx:0, vy:0, walk:0, idle:3, meowT:0, scratchT:0, inv:0, hidden:false, inCoat:false }, 1.3, b.dataset.cat, true);
     } catch(e){}
     ctx = old;
@@ -871,7 +957,7 @@ function drawPreviews(){
 function showPlayUI(){ $('hud').hidden = false; $('quest').hidden = false; $('pad').hidden = false; $('acts').hidden = false; $('keys').hidden = false; updateHUD(); }
 function newGame(){
   const nf = $('optNoFail').checked || st.noFail;
-  clearSave(); freshState(); st.noFail = nf; placeAt('nha'); st.mode = 'play'; showPlayUI(); track('start', { noFail: nf, cat: st.kind });
+  clearSave(); freshState(); st.noFail = nf; placeAt('nha'); st.mode = 'play'; showPlayUI(); track('start', { noFail: nf, cat: st.kind, pattern: catSpec(st.kind).pattern });
   say([
     { who:'', text:'Đêm 23 tháng Chạp. Hẻm 47 đã có quyết định giải tỏa.' },
     { who:'', text:'Chiều nay bà Tư dọn đi. Mướp mải rượt chuột ngoài bãi xà bần, về tới nơi thì nhà đã trống trơn.' },
@@ -889,7 +975,7 @@ $('btnContinue').addEventListener('click', () => { audioInit(); const s = loadSa
 function physics(dt){
   const c = cat;
   const dir = (K.right ? 1 : 0) - (K.left ? 1 : 0);
-  if (dir){ c.vx = approach(c.vx, dir*RUN, (c.onGround ? 2400 : 1500)*dt); c.face = dir; c.idle = 0; }
+  if (dir){ c.vx = approach(c.vx, dir*runSpeed(), (c.onGround ? 2400 : 1500)*dt); c.face = dir; c.idle = 0; }
   else c.vx = approach(c.vx, 0, (c.onGround ? 2600 : 500)*dt);
   if (c.onGround) c.coyote = .1; else c.coyote -= dt;
   c.buffer -= dt;
@@ -1281,7 +1367,7 @@ function drawAnFull(x, by, t){
   box(x - 8, by - 26, 6, 26, '#2c2a3a'); box(x + 2, by - 26, 6, 26, '#2c2a3a');
   box(x - 14, by - 58, 28, 34, '#3e6fa8');
   if (coat){ // Mướp peeking from coat
-    const FUR = CATS[st.kind].fur; ctx.fillStyle = FUR; ctx.beginPath(); ctx.arc(x - 2, by - 50, 8, 0, 7); ctx.fill();
+    const FUR = catSpec(st.kind).fur; ctx.fillStyle = FUR; ctx.beginPath(); ctx.arc(x - 2, by - 50, 8, 0, 7); ctx.fill();
     ctx.beginPath(); ctx.moveTo(x - 9, by - 54); ctx.lineTo(x - 7, by - 63); ctx.lineTo(x - 3, by - 56); ctx.fill(); ctx.beginPath(); ctx.moveTo(x + 1, by - 56); ctx.lineTo(x + 4, by - 63); ctx.lineTo(x + 6, by - 54); ctx.fill();
     ctx.fillStyle = '#d8e26a'; ctx.fillRect(x - 5, by - 51, 2.5, 2.5); ctx.fillRect(x + 1, by - 51, 2.5, 2.5);
   }
@@ -1352,9 +1438,36 @@ function drawLu(t){
   if (lu.state === 'sniff'){ ctx.fillStyle = '#f3be5a'; ctx.font = `20px ${FD}`; ctx.fillText('?', x + lu.w/2 - 4, by - 54); }
 }
 
+// Hoa văn vẽ trong vùng cắt (clip) của thân hoặc đầu
+function catPattern(CK, part, sit){
+  const P = CK.pattern;
+  if (P === 'solid') return;
+  ctx.save(); ctx.clip();
+  if (P === 'tabby'){
+    ctx.strokeStyle = CK.stripe; ctx.lineCap = 'round';
+    if (part === 'head'){ ctx.lineWidth = 1.8; for (const x of [-4, 0, 4]){ ctx.beginPath(); ctx.moveTo(x, -10); ctx.lineTo(x + .5, -5); ctx.stroke(); } }
+    else if (sit){ ctx.lineWidth = 2.2; for (const y of [-24, -17, -10]){ ctx.beginPath(); ctx.moveTo(-11, y); ctx.quadraticCurveTo(-5, y - 3, -1, y + 1); ctx.stroke(); } }
+    else { ctx.lineWidth = 2.4; for (const x of [-13, -6, 1, 8]){ ctx.beginPath(); ctx.moveTo(x, -27); ctx.quadraticCurveTo(x - 3, -21, x + 1, -16); ctx.stroke(); } }
+  } else if (P === 'spots'){
+    ctx.fillStyle = CK.stripe;
+    const pts = part === 'head' ? [[-5,-6,1.5],[-1,-8,1.4],[3,-6,1.3],[-7,-1,1.3]]
+      : sit ? [[-8,-25,2],[-3,-19,2.3],[-9,-15,2.1],[-4,-10,1.9],[1,-27,1.7],[-6,-5,1.6]]
+      : [[-15,-20,2.3],[-9,-24,2],[-4,-18,2.5],[2,-23,2.1],[8,-19,2.3],[13,-24,1.7],[-12,-14,1.9],[5,-14,1.7],[-18,-25,1.5]];
+    for (const [x, y, r] of pts){ ctx.beginPath(); ctx.ellipse(x, y, r*1.25, r, .3, 0, 7); ctx.fill(); }
+    ctx.strokeStyle = CK.stripe; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+    if (part === 'head'){ for (const x of [-2, 2]){ ctx.beginPath(); ctx.moveTo(x, -11); ctx.lineTo(x + .4, -6); ctx.stroke(); } }
+    else if (!sit){ ctx.beginPath(); ctx.moveTo(15, -27); ctx.lineTo(13, -20); ctx.stroke(); }
+  } else if (P === 'calico'){
+    const blob = (c, x, y, rx, ry, r) => { ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, r || 0, 0, 7); ctx.fill(); };
+    if (part === 'head'){ blob(CK.p1, -5, -6, 7.5, 5.5, -.4); blob(CK.p2, 5, -8, 4.5, 3.2, .3); }
+    else if (sit){ blob(CK.p1, -5, -22, 8.5, 7, .2); blob(CK.p2, -7, -10, 6, 5, -.3); blob(CK.p2, 4, -27, 4, 3); }
+    else { blob(CK.p1, -9, -22, 10, 7, .15); blob(CK.p2, 7, -24, 7, 5, -.2); blob(CK.p2, -18, -13, 5.5, 6); blob(CK.p1, 14, -15, 4, 3); }
+  }
+  ctx.restore();
+}
 function drawCat(c, t, kind, preview){
   if (c.inCoat) return;
-  const CK = CATS[kind || st.kind] || CATS.muop, FUR = CK.fur, FUR_D = CK.dark, BELLY = CK.belly;
+  const CK = catSpec(kind || st.kind), FUR = CK.fur, BELLY = CK.belly;
   const rim = () => { if (CK.rim){ ctx.strokeStyle = 'rgba(176,166,220,.6)'; ctx.lineWidth = 1.3; ctx.stroke(); } };
   const cx = c.x + c.w/2, by = c.y + c.h;
   ctx.save(); ctx.translate(cx, by); ctx.scale(c.face, 1);
@@ -1370,9 +1483,10 @@ function drawCat(c, t, kind, preview){
   if (sit){ ctx.moveTo(-8, -4); ctx.quadraticCurveTo(-28, 0, -24 + sw*4, -12); }
   else if (air){ ctx.moveTo(-18, -16); ctx.quadraticCurveTo(-34, -18, -46, -12 + sw*3); }
   else { ctx.moveTo(-18, -17); ctx.quadraticCurveTo(-36, -24, -36 + sw*6, -42 + (mv ? Math.sin(ph*2)*4 : 0)); }
-  ctx.strokeStyle = FUR_D; ctx.lineWidth = 7; ctx.stroke(); ctx.strokeStyle = FUR; ctx.lineWidth = 4; ctx.setLineDash([5, 4]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = CK.tailA; ctx.lineWidth = 7; ctx.stroke(); ctx.strokeStyle = CK.tailB; ctx.lineWidth = 4; ctx.setLineDash([5, 4]); ctx.stroke(); ctx.setLineDash([]);
   // legs
-  ctx.strokeStyle = FUR_D; ctx.lineWidth = 5;
+  ctx.strokeStyle = CK.legs; ctx.lineWidth = CK.bigEars ? 4.4 : 5;
+  const legLen = CK.bigEars ? 2 : 0;
   if (sit){ ctx.beginPath(); ctx.moveTo(4, -14); ctx.lineTo(5, 0); ctx.moveTo(10, -14); ctx.lineTo(11, 0); ctx.stroke(); }
   else {
     const legs = [[-14, 0], [-8, Math.PI], [10, Math.PI*.5], [16, Math.PI*1.5]];
@@ -1381,31 +1495,30 @@ function drawCat(c, t, kind, preview){
       if (air){ fx = lx + (lx < 0 ? -8 : 9); fy = -4; }
       else if (mv){ fx = lx + Math.sin(ph + o)*7; fy = -Math.max(0, Math.cos(ph + o))*3; }
       if (c.scratchT > 0 && lx === 16){ fx = 26; fy = -16; }
-      ctx.beginPath(); ctx.moveTo(lx, -12); ctx.lineTo(fx, fy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(lx, -12 - legLen); ctx.lineTo(fx, fy); ctx.stroke();
     }
   }
   // body
-  let hx, hy;
+  let hx, hy; const lift = sit ? 0 : legLen;
   if (sit){
-    ctx.fillStyle = FUR; ctx.beginPath(); ctx.ellipse(0, -15, 12, 15, -.15, 0, 7); ctx.fill(); rim();
+    ctx.fillStyle = FUR; ctx.beginPath(); ctx.ellipse(0, -15, 12, 15, -.15, 0, 7); ctx.fill(); catPattern(CK, 'body', true); rim();
     ctx.fillStyle = BELLY; ctx.beginPath(); ctx.ellipse(5, -12, 6, 10, -.15, 0, 7); ctx.fill();
-    if (CK.stripes) { ctx.strokeStyle = FUR_D; ctx.lineWidth = 2.2; } for (const y of (CK.stripes ? [-24, -17, -10] : [])){ ctx.beginPath(); ctx.moveTo(-11, y); ctx.quadraticCurveTo(-5, y - 3, -1, y + 1); ctx.stroke(); }
     hx = 5; hy = -33;
   } else {
     const stretch = air ? 1.12 : 1;
-    ctx.fillStyle = FUR; ctx.beginPath(); ctx.ellipse(0, -17, 21*stretch, 10.5/stretch, air ? (c.vy < 0 ? -.15 : .12) : 0, 0, 7); ctx.fill(); rim();
+    ctx.save(); ctx.translate(0, -lift);
+    ctx.fillStyle = FUR; ctx.beginPath(); ctx.ellipse(0, -17, 21*stretch, 10.5/stretch, air ? (c.vy < 0 ? -.15 : .12) : 0, 0, 7); ctx.fill(); catPattern(CK, 'body', false); rim();
     ctx.fillStyle = BELLY; ctx.beginPath(); ctx.ellipse(3, -11, 14, 4.5, 0, 0, 7); ctx.fill();
-    ctx.strokeStyle = FUR_D; ctx.lineWidth = 2.4; for (const x of (CK.stripes ? [-13, -6, 1, 8] : [])){ ctx.beginPath(); ctx.moveTo(x, -27); ctx.quadraticCurveTo(x - 3, -21, x + 1, -16); ctx.stroke(); }
-    hx = 20; hy = -24 + (meow ? -3 : 0) + (mv ? Math.sin(ph*2)*1 : 0);
+    ctx.restore();
+    hx = 20; hy = -24 - lift + (meow ? -3 : 0) + (mv ? Math.sin(ph*2)*1 : 0);
   }
   // head
   ctx.save(); ctx.translate(hx, hy); if (meow) ctx.rotate(-.18);
-  ctx.fillStyle = FUR;
-  ctx.beginPath(); ctx.moveTo(-8, -5); ctx.lineTo(-5, -17); ctx.lineTo(0, -8); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(2, -8); ctx.lineTo(7, -17); ctx.lineTo(10, -4); ctx.fill();
-  ctx.fillStyle = CK.ear; ctx.beginPath(); ctx.moveTo(-6, -7); ctx.lineTo(-4.5, -13); ctx.lineTo(-2, -8); ctx.fill();
-  ctx.fillStyle = FUR; ctx.beginPath(); ctx.arc(0, 0, 10.5, 0, 7); ctx.fill(); rim();
-  ctx.strokeStyle = FUR_D; ctx.lineWidth = 1.8; for (const x of (CK.stripes ? [-4, 0, 4] : [])){ ctx.beginPath(); ctx.moveTo(x, -10); ctx.lineTo(x + .5, -5); ctx.stroke(); }
+  const eh = CK.bigEars ? 1.4 : 1;
+  ctx.fillStyle = CK.ear1 || FUR; ctx.beginPath(); ctx.moveTo(-8, -5); ctx.lineTo(-5, -8 - 9*eh); ctx.lineTo(0, -8); ctx.fill();
+  ctx.fillStyle = CK.ear2 || FUR; ctx.beginPath(); ctx.moveTo(2, -8); ctx.lineTo(7, -8 - 9*eh); ctx.lineTo(10, -4); ctx.fill();
+  ctx.fillStyle = CK.ear; ctx.beginPath(); ctx.moveTo(-6, -7); ctx.lineTo(-4.5, -7 - 6*eh); ctx.lineTo(-2, -8); ctx.fill();
+  ctx.fillStyle = FUR; ctx.beginPath(); ctx.arc(0, 0, 10.5, 0, 7); ctx.fill(); catPattern(CK, 'head'); rim();
   ctx.fillStyle = BELLY; ctx.beginPath(); ctx.ellipse(6, 3.5, 5.5, 4, 0, 0, 7); ctx.fill();
   // eye
   const blink = (Math.floor(t*10) % 37) === 0;
@@ -1414,7 +1527,7 @@ function drawCat(c, t, kind, preview){
   ctx.shadowBlur = 0;
   ctx.fillStyle = CK.nose; ctx.beginPath(); ctx.arc(10.5, 1.5, 1.6, 0, 7); ctx.fill();
   if (meow){ ctx.fillStyle = '#5a2a2a'; ctx.beginPath(); ctx.ellipse(8.5, 6, 2.6, 2.2, 0, 0, 7); ctx.fill(); }
-  ctx.strokeStyle = 'rgba(240,235,220,.7)'; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(9, 3); ctx.lineTo(20, 1); ctx.moveTo(9, 4.5); ctx.lineTo(20, 6); ctx.stroke();
+  ctx.strokeStyle = lumC(BELLY) > .75 ? 'rgba(90,80,70,.6)' : 'rgba(240,235,220,.7)'; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(9, 3); ctx.lineTo(20, 1); ctx.moveTo(9, 4.5); ctx.lineTo(20, 6); ctx.stroke();
   if (!preview && st.khan && !st.ended){ for (let r = 0; r < 3; r++) for (let q = 0; q < 3; q++){ ctx.fillStyle = (r + q) % 2 ? '#f1ece2' : '#22202a'; ctx.fillRect(7 + q*3.5, 5 + r*3.5, 3.5, 3.5); } }
   ctx.restore();
   if (!preview && sit && c.idle > 7 && !reduceMotion){ ctx.scale(c.face, 1); ctx.fillStyle = 'rgba(244,234,213,.75)'; ctx.font = `13px ${FD}`; const o = (t*12) % 18; ctx.fillText('z', 12, -44 - o); ctx.fillText('z', 18, -52 - (o + 9) % 18); }
@@ -1581,6 +1694,8 @@ function start(data){
   const saved = (data && data.save) || loadSave();
   if (saved && !saved.ended) $('btnContinue').hidden = false;
   if (saved && saved.noFail) $('optNoFail').checked = true;
+  if (saved && saved.kind === 'custom' && saved.mix) MIX = cleanMix(saved.mix);
+  syncMixUI();
   setKind((saved && saved.kind) || lsGet('chinkiep.kind') || 'muop');
   $('privNote').hidden = !canSend; $('optStatsRow').hidden = !canSend;
   drawPreviews();
